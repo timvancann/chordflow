@@ -10,7 +10,6 @@ use std::{
 use audio::play;
 use clap::Parser;
 use fluidlite::{Settings, Synth};
-use keymap::handle_keys;
 use metronome::Metronome;
 use mode::Mode;
 use music::{note::Note, quality::Quality};
@@ -20,20 +19,19 @@ use rodio::{OutputStream, Sink};
 use strum::{AsRefStr, EnumCount, FromRepr, IntoEnumIterator};
 
 mod audio;
-mod keymap;
 mod metronome;
 mod mode;
 mod music;
 mod practice_state;
 mod progression;
 mod timer;
-mod ui;
+mod tui;
 
 use crossterm::event::{self, Event};
 use ratatui::DefaultTerminal;
 use strum::Display;
 use strum_macros::EnumIter;
-use ui::render_ui;
+use tui::{keymap::handle_keys, ui::render_ui};
 
 #[derive(Parser, Debug)]
 pub struct Cli {

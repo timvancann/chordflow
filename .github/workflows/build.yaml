@@ -21,16 +21,30 @@ jobs:
           - build: linux
             os: ubuntu-latest
             target: x86_64-unknown-linux-musl
+            dependencies: |
+              sudo apt-get update && sudo apt-get install -y --reinstall libasound2-dev pkg-config
+              echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig" >> $GITHUB_ENV
+
           - build: macos
             os: macos-latest
             target: x86_64-apple-darwin
+            dependencies: |
+              brew install cmake portaudio pkg-config
+              echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> $GITHUB_ENV
+
           - build: windows-gnu
             os: windows-latest
-            target: x86_64-pc-windows-gnu
+            target: x86_64-pc-windows-msvc
+            dependencies: |
+              choco install vcpkg -y
+              vcpkg install portaudio:x64-windows
 
     steps: 
     - name: Clone repository
       uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: ${{ matrix.dependencies }}
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -42,7 +56,7 @@ jobs:
       with:
         use-cross: true
         command: build
-        args: --verbose --release --target ${{ matrix.target }}
+        args: --release --target ${{ matrix.target }}
 
       
 

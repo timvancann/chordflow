@@ -282,6 +282,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "chordflow"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap 4.5.27",
+ "color-eyre",
+ "crossterm",
+ "figlet-rs",
+ "fluidlite",
+ "itertools 0.14.0",
+ "midly",
+ "rand",
+ "ratatui",
+ "regex",
+ "rodio",
+ "serde",
+ "strum 0.27.0",
+ "strum_macros 0.27.0",
+]
+
+[[package]]
 name = "clang-sys"
 version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -672,27 +693,6 @@ name = "glob"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8d1add55171497b4705a648c6b583acafb01d58050a51727785f0b2c8e0a2b2"
-
-[[package]]
-name = "guitar-practice"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap 4.5.27",
- "color-eyre",
- "crossterm",
- "figlet-rs",
- "fluidlite",
- "itertools 0.14.0",
- "midly",
- "rand",
- "ratatui",
- "regex",
- "rodio",
- "serde",
- "strum 0.27.0",
- "strum_macros 0.27.0",
-]
 
 [[package]]
 name = "hashbrown"
