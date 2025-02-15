@@ -36,6 +36,45 @@ jobs:
       with: 
         targets: ${{ matrix.target }}
 
+    - name: Get Version
+      shell: bash
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+    - name: Build
+      uses: actions-rs/cargo@v1
+      with:
+        use-cross: true
+        command: build
+        args: --verbose --release --target ${{ matrix.target }}
+
+    - name: Build Archive
+      shell: bash
+      run: |
+        binary_name="chordflow"
+
+        dirname="${binary_name}-${{ env.VERSION }}-${{ matrix.target }}"
+        mkdir ${dirname}
+
+        if [ "${{ matrix.os}}" = "windows-latest" ];
+          mv target/${{ matrix.target }}/release/${binary_name}.exe ${dirname}
+        else 
+          mv target/${{ matrix.target }}/release/${binary_name} ${dirname}
+        fi
+
+        if [ "${{ matrix.os}}" = "windows-latest"];
+          7z a "${dirname}.zip" ${dirname}
+          echo "ASSET=${dirname.zip}" >> ${GITHUB_ENV}
+        else
+          tar -czf "${dirname}.tar.gz" ${dirname}
+          echo "ASSET=${dirname.tar.gz}" >> ${GITHUB_ENV}
+        fi
+
+    - name: Upload Binaries
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ${{ env.ASSET }}
+
 
       
 
