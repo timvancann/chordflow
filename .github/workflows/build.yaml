@@ -1,18 +1,19 @@
-name: Deploy
+name: Build
 
 on:
   push:
-    tags:
-      - '*'
+    branches: '*'
+  pull_request:
+    branches: [ "main" ]
+
 
 env:
   CARGO_TERM_COLOR: always
 
-
 jobs:
   build-and-upload:
     name: Build and Upload
-    runs-on: ${{ matrix }}
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
@@ -38,6 +39,4 @@ jobs:
 
 
       
-
-
 
