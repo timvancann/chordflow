@@ -18,19 +18,18 @@ jobs:
     strategy:
       matrix:
         include:
-          - build: linux
-            os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            dependencies: |
-              sudo apt-get update && sudo apt-get install -y --reinstall libasound2-dev pkg-config
-              echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig" >> $GITHUB_ENV
+          #          - build: linux
+          #            os: ubuntu-latest
+          #            target: x86_64-unknown-linux-musl
+          #            dependencies: |
+          #              sudo apt-get update && sudo apt-get install -y --reinstall libasound2-dev pkg-config
+          #              echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig" >> $GITHUB_ENV
 
           - build: macos
             os: macos-latest
             target: x86_64-apple-darwin
             dependencies: |
               brew install cmake portaudio pkg-config
-              echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> $GITHUB_ENV
 
           - build: windows-gnu
             os: windows-latest
