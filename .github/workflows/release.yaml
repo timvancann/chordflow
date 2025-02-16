@@ -17,19 +17,15 @@ jobs:
     strategy:
       matrix:
         include:
-          - build: linux
-            os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            dependencies: sudo apt-get update && sudo apt-get install -y libasound2-dev
-
           - build: macos
             os: macos-latest
             target: x86_64-apple-darwin
-            dependencies: brew install portaudio
+            dependencies: |
+              brew install cmake portaudio pkg-config
 
           - build: windows-gnu
             os: windows-latest
-            target: x86_64-pc-windows-gnu
+            target: x86_64-pc-windows-msvc
             dependencies: |
               choco install vcpkg -y
               vcpkg install portaudio:x64-windows
@@ -55,7 +51,7 @@ jobs:
       with:
         use-cross: true
         command: build
-        args: --verbose --release --target ${{ matrix.target }}
+        args: --release --target ${{ matrix.target }}
 
     - name: Build Archive
       shell: bash
