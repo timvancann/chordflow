@@ -13,6 +13,8 @@ jobs:
   build-and-upload:
     name: Build and Upload
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
 
     strategy:
       matrix:
@@ -61,18 +63,18 @@ jobs:
         dirname="${binary_name}-${{ env.VERSION }}-${{ matrix.target }}"
         mkdir ${dirname}
 
-        if [ "${{ matrix.os}}" = "windows-latest" ];
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
           mv target/${{ matrix.target }}/release/${binary_name}.exe ${dirname}
-        else 
+        else
           mv target/${{ matrix.target }}/release/${binary_name} ${dirname}
         fi
-
-        if [ "${{ matrix.os}}" = "windows-latest"];
+        
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
           7z a "${dirname}.zip" ${dirname}
-          echo "ASSET=${dirname.zip}" >> ${GITHUB_ENV}
+          echo "ASSET=${dirname}.zip" >> ${GITHUB_ENV}
         else
           tar -czf "${dirname}.tar.gz" ${dirname}
-          echo "ASSET=${dirname.tar.gz}" >> ${GITHUB_ENV}
+          echo "ASSET=${dirname}.tar.gz" >> ${GITHUB_ENV}
         fi
 
     - name: Upload Binaries
