@@ -11,6 +11,11 @@ ChordFlow is a TUI (Terminal User Interface) tool designed to help guitarists/mu
 - ⚙️  Customizability – Users can supply their own SoundFont for metronome ticks and chord sounds.
 - 🖥️ Cross-Platform – Works on macOS, and Windows.
 
+## 🎥 Video Demo
+
+[![ChordFlow](https://img.youtube.com/vi/Oc7po6uNBfQ/0.jpg)](https://www.youtube.com/watch?v=Oc7po6uNBfQ)
+
+
 ## 📦 Installation
 
 1. Build from Source
