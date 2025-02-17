@@ -1,0 +1,15 @@
+[package]
+name = "chordflow_desktop"
+version = "0.1.0"
+authors = ["Tim van Cann <timvancann@gmail.com>"]
+edition = "2021"
+
+
+[dependencies]
+dioxus = { version = "0.6.3", features = ["router", "fullstack"] }
+
+[features]
+default = ["desktop"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]

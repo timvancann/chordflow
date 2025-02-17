@@ -49,24 +49,22 @@ impl Scale {
 
 #[cfg(test)]
 mod tests {
+    use crate::note::{Note, NoteLetter};
 
-    use super::*;
+    use super::{Scale, ScaleType};
 
     #[test]
     fn test_c_major_notes() {
-        let scale = Scale::new(
-            Note::new(crate::music::note::NoteLetter::C, 0),
-            ScaleType::Diatonic,
-        );
+        let scale = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Diatonic);
 
         let actual_notes = vec![
-            Note::new(crate::music::note::NoteLetter::C, 0),
-            Note::new(crate::music::note::NoteLetter::D, 0),
-            Note::new(crate::music::note::NoteLetter::E, 0),
-            Note::new(crate::music::note::NoteLetter::F, 0),
-            Note::new(crate::music::note::NoteLetter::G, 0),
-            Note::new(crate::music::note::NoteLetter::A, 0),
-            Note::new(crate::music::note::NoteLetter::B, 0),
+            Note::new(NoteLetter::C, 0),
+            Note::new(NoteLetter::D, 0),
+            Note::new(NoteLetter::E, 0),
+            Note::new(NoteLetter::F, 0),
+            Note::new(NoteLetter::G, 0),
+            Note::new(NoteLetter::A, 0),
+            Note::new(NoteLetter::B, 0),
         ];
 
         for (interval, note) in scale.intervals.into_iter().zip(actual_notes) {

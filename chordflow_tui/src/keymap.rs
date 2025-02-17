@@ -1,16 +1,17 @@
+use chordflow_audio::audio::play;
+use chordflow_music_theory::{
+    note::generate_all_roots,
+    quality::Quality,
+    scale::{Scale, ScaleType},
+};
+use chordflow_shared::{
+    mode::Mode,
+    progression::{Progression, ProgressionChord},
+    DiatonicOption, ModeOption,
+};
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{
-    audio::play,
-    mode::Mode,
-    music::{
-        note::generate_all_roots,
-        quality::Quality,
-        scale::{Scale, ScaleType},
-    },
-    progression::{Progression, ProgressionChord},
-    App, AppTab, DiatonicOption, ModeOption,
-};
+use crate::{App, AppTab};
 
 pub fn handle_keys(key: KeyEvent, app: &mut App) {
     match key.code {
@@ -47,10 +48,10 @@ pub fn handle_keys(key: KeyEvent, app: &mut App) {
             if has_changed {
                 app.metronome.reset();
                 app.metronome.reset_timers();
-                app.sink.stop();
+                app.audio.sink.stop();
                 play(
-                    &mut app.synth,
-                    &app.sink,
+                    &mut app.audio.synth,
+                    &app.audio.sink,
                     app.practice_state.current_chord,
                     app.metronome.duration_per_bar,
                     app.metronome.num_beats,
@@ -68,10 +69,10 @@ pub fn handle_keys(key: KeyEvent, app: &mut App) {
                 app.practice_state.reset();
                 app.metronome.reset();
                 app.metronome.reset_timers();
-                app.sink.stop();
+                app.audio.sink.stop();
                 play(
-                    &mut app.synth,
-                    &app.sink,
+                    &mut app.audio.synth,
+                    &app.audio.sink,
                     app.practice_state.current_chord,
                     app.metronome.duration_per_bar,
                     app.metronome.num_beats,

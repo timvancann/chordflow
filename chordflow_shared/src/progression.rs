@@ -1,15 +1,13 @@
+use anyhow::Result;
 use std::fmt::{self, Display};
 
-use regex::Regex;
-
-use anyhow::Result;
-
-use crate::music::{
+use chordflow_music_theory::{
     accidental::Accidental,
     chord::Chord,
     note::{Note, NoteLetter},
     quality::Quality,
 };
+use regex::Regex;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Progression {

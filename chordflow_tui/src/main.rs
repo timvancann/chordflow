@@ -1,37 +1,36 @@
+use log::{debug, info, LevelFilter};
+use log4rs::append::file::FileAppender;
+use log4rs::config::{Appender, Config, Root};
+use log4rs::encode::pattern::PatternEncoder;
+use rodio::{OutputStream, Sink};
 use std::{
-    env,
-    fs::File,
-    io::{self, Write},
+    io::{self},
     path::PathBuf,
     thread,
     time::{Duration, Instant},
 };
 
-use audio::play;
+use chordflow_audio::audio::{play, setup_audio, Audio};
+use chordflow_music_theory::{
+    note::{Note, NoteLetter},
+    quality::Quality,
+};
+use chordflow_shared::{
+    metronome::Metronome, mode::Mode, practice_state::PracticState, progression::Progression,
+    DiatonicOption, ModeOption,
+};
 use clap::Parser;
-use fluidlite::{Settings, Synth};
-use metronome::Metronome;
-use mode::Mode;
-use music::{note::Note, quality::Quality};
-use practice_state::PracticState;
-use progression::Progression;
-use rodio::{OutputStream, Sink};
 use strum::{AsRefStr, EnumCount, FromRepr, IntoEnumIterator};
 
-mod audio;
-mod metronome;
-mod mode;
-mod music;
-mod practice_state;
-mod progression;
-mod timer;
-mod tui;
+mod keymap;
+mod ui;
 
 use crossterm::event::{self, Event};
+use keymap::handle_keys;
 use ratatui::DefaultTerminal;
 use strum::Display;
 use strum_macros::EnumIter;
-use tui::{keymap::handle_keys, ui::render_ui};
+use ui::render_ui;
 
 #[derive(Parser, Debug)]
 pub struct Cli {
@@ -65,40 +64,35 @@ pub struct Cli {
     pub soundfont: Option<PathBuf>,
 }
 
-fn extract_soundfont() -> PathBuf {
-    let mut path = env::temp_dir();
-    path.push("guitar_practice_soundfont.sf2"); // Use a fixed filename
+#[cfg(debug_assertions)]
+fn setup_logging() {
+    let file_path = "tui.log";
+    let logfile = FileAppender::builder()
+        // Pattern: https://docs.rs/log4rs/*/log4rs/encode/pattern/index.html
+        .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
+        .build(file_path)
+        .unwrap();
 
-    if !path.exists() {
-        // Load SoundFont bytes
-        let soundfont_bytes = include_bytes!("../assets/TimGM6mb.sf2");
+    let config = Config::builder()
+        .appender(Appender::builder().build("logfile", Box::new(logfile)))
+        .build(
+            Root::builder()
+                .appender("logfile")
+                .build(LevelFilter::Debug),
+        )
+        .unwrap();
 
-        // Create and write file
-        let mut file = File::create(&path).expect("Failed to create temp SoundFont file");
-        file.write_all(soundfont_bytes)
-            .expect("Failed to write SoundFont file");
-    }
-
-    path
+    let _handle = log4rs::init_config(config);
 }
 
 fn main() -> io::Result<()> {
     let cli = Cli::parse();
-
-    let settings = Settings::new().unwrap();
-
-    let synth = Synth::new(settings).expect("Failed to create synthesizer");
-    synth
-        .sfload(cli.soundfont.unwrap_or(extract_soundfont()), true)
-        .unwrap();
-
-    let (_stream, stream_handle) =
-        OutputStream::try_default().expect("Failed to create audio output stream");
-    let sink = Sink::try_new(&stream_handle).expect("Failed to create Rodio sink");
+    #[cfg(debug_assertions)]
+    setup_logging();
 
     let mut terminal = ratatui::init();
 
-    let mut app = App::new(synth, sink);
+    let mut app = App::new(setup_audio(cli.soundfont));
 
     app.run(&mut terminal)?;
     ratatui::restore();
@@ -110,20 +104,6 @@ enum AppTab {
     Mode,
     Config,
     Playback,
-}
-
-#[derive(Clone, Copy, Debug, EnumIter, Display, AsRefStr, PartialEq, EnumCount, FromRepr)]
-enum ModeOption {
-    Fourths,
-    Diatonic,
-    Random,
-    Custom,
-}
-
-#[derive(Clone, Copy, Debug, EnumIter, Display, AsRefStr, PartialEq, EnumCount, FromRepr)]
-enum DiatonicOption {
-    Incemental,
-    Random,
 }
 
 struct App {
@@ -142,15 +122,14 @@ struct App {
     metronome: Metronome,
     practice_state: PracticState,
 
-    synth: Synth,
-    sink: Sink,
+    audio: Audio,
 }
 
 impl App {
-    fn new(synth: Synth, sink: Sink) -> Self {
+    fn new(audio: Audio) -> Self {
         Self {
             exit: false,
-            selected_tab: AppTab::Mode,
+            selected_tab: AppTab::Playback,
             selected_mode: ModeOption::Fourths,
             fourths_selected_quality: Quality::Major,
             random_selected_qualities: Quality::iter().collect(),
@@ -158,11 +137,10 @@ impl App {
             custom_input_buffer: String::new(),
             custom_parsed_progression: None,
             diatonic_selected_option: DiatonicOption::Incemental,
-            diatonic_selected_root: Note::new(music::note::NoteLetter::C, 0),
+            diatonic_selected_root: Note::new(NoteLetter::C, 0),
             metronome: Metronome::new(100, 2, 4, Instant::now),
             practice_state: PracticState::default(),
-            synth,
-            sink,
+            audio,
         }
     }
     fn next_item<T>(&mut self, current_item: T) -> usize
@@ -189,10 +167,9 @@ impl App {
 
     fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         self.metronome.start();
-        self.selected_tab = AppTab::Playback;
         play(
-            &mut self.synth,
-            &self.sink,
+            &mut self.audio.synth,
+            &self.audio.sink,
             self.practice_state.current_chord,
             self.metronome.duration_per_bar,
             self.metronome.num_beats,
@@ -207,6 +184,7 @@ impl App {
     fn update(&mut self) {
         self.metronome.tick();
         if self.metronome.has_cycle_ended() {
+            info!("Cycle ended");
             if let Mode::Custom(Some(p)) = &self.practice_state.mode {
                 self.metronome.num_bars =
                     p.chords[self.practice_state.next_progression_chord_idx].bars;
@@ -215,9 +193,10 @@ impl App {
             self.metronome.reset();
         }
         if self.metronome.has_bar_ended() {
+            info!("Bar ended");
             play(
-                &mut self.synth,
-                &self.sink,
+                &mut self.audio.synth,
+                &self.audio.sink,
                 self.practice_state.current_chord,
                 self.metronome.duration_per_bar,
                 self.metronome.num_beats,

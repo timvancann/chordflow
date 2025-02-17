@@ -1,9 +1,18 @@
-use fluidlite::Synth;
-use rodio::{buffer::SamplesBuffer, Sink};
+use std::{env, fs::File, io::Write, path::PathBuf};
 
-use crate::music::chord::Chord;
+use chordflow_music_theory::chord::Chord;
+use fluidlite::{Settings, Synth};
+use log::{debug, info};
+use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
 
 const SAMPLE_RATE: usize = 44100;
+
+pub struct Audio {
+    _stream: OutputStream,
+    pub synth: Synth,
+    pub sink: Sink,
+}
+
 pub fn play_chord_with_ticks(
     synth: &mut Synth,
     notes: &[u32],
@@ -54,6 +63,53 @@ pub fn play_tick(synth: &mut Synth, tick_time: u64, buffer: &mut [f32]) {
     });
 }
 
+pub fn setup_audio(soundfont_path: Option<PathBuf>) -> Audio {
+    let (sink, _stream) = create_audio_sink();
+
+    Audio {
+        synth: create_synth(soundfont_path),
+        sink,
+        _stream,
+    }
+}
+
+pub fn create_synth(soundfont_path: Option<PathBuf>) -> fluidlite::Synth {
+    let settings = Settings::new().unwrap();
+
+    let synth = Synth::new(settings).expect("Failed to create synthesizer");
+    synth
+        .sfload(soundfont_path.unwrap_or(extract_soundfont()), true)
+        .unwrap();
+    synth
+}
+
+fn extract_soundfont() -> PathBuf {
+    let mut path = env::temp_dir();
+    path.push("guitar_practice_soundfont.sf2"); // Use a fixed filename
+    debug!("{:?}", path);
+
+    if !path.exists() {
+        // Load SoundFont bytes
+        let soundfont_bytes = include_bytes!("../assets/TimGM6mb.sf2");
+
+        // Create and write file
+        let mut file = File::create(&path).expect("Failed to create temp SoundFont file");
+        file.write_all(soundfont_bytes)
+            .expect("Failed to write SoundFont file");
+    }
+
+    path
+}
+
+pub fn create_audio_sink() -> (rodio::Sink, OutputStream) {
+    let (_stream, stream_handle) =
+        OutputStream::try_default().expect("Failed to create audio output stream");
+    (
+        Sink::try_new(&stream_handle).expect("Failed to create Rodio sink"),
+        _stream,
+    )
+}
+
 pub fn note_to_midi(semitones_from_c: i32) -> u32 {
     ((semitones_from_c % 12) + 60) as u32
 }
@@ -68,6 +124,7 @@ pub fn chord_to_midi(chord: Chord) -> Vec<u32> {
 
 pub fn play(synth: &mut Synth, sink: &Sink, chord: Chord, duration: u64, num_beats: usize) {
     let notes = chord_to_midi(chord);
+    info!("Chord notes {:?}", notes);
     let buffer = play_chord_with_ticks(synth, &notes, duration, num_beats);
     let source = SamplesBuffer::new(2, SAMPLE_RATE as u32, buffer);
     sink.append(source);

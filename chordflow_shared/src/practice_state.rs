@@ -1,17 +1,14 @@
+use chordflow_music_theory::{
+    chord::Chord,
+    interval::Interval,
+    note::{generate_all_roots, Note, NoteLetter},
+    quality::Quality,
+    scale::Scale,
+    util::random_chord,
+};
 use rand::{rng, seq::IndexedRandom};
 
-use crate::{
-    mode::Mode,
-    music::{
-        chord::Chord,
-        interval::Interval,
-        note::{generate_all_roots, Note, NoteLetter},
-        quality::Quality,
-        random_chord,
-        scale::Scale,
-    },
-    DiatonicOption,
-};
+use crate::{mode::Mode, DiatonicOption};
 
 pub struct PracticState {
     pub current_chord: Chord,
@@ -72,7 +69,7 @@ impl PracticState {
         }
     }
 
-    pub(crate) fn reset(&mut self) {
+    pub fn reset(&mut self) {
         let mut rand = rng();
         self.current_chord = match &self.mode {
             Mode::Fourths(q) => Chord::new(Note::new(NoteLetter::B, 0), *q),
@@ -144,7 +141,8 @@ impl Default for PracticState {
 }
 #[cfg(test)]
 mod tests {
-    use crate::music::scale::ScaleType;
+
+    use chordflow_music_theory::scale::ScaleType;
 
     use super::*;
 

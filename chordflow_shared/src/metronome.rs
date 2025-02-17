@@ -70,18 +70,18 @@ impl Metronome {
         }
     }
 
-    pub(crate) fn toggle(&mut self) {
+    pub fn toggle(&mut self) {
         self.beat_timer.toggle();
     }
 
-    pub(crate) fn reset_timers(&mut self) {
+    pub fn reset_timers(&mut self) {
         self.beat_timer.reset();
     }
 
-    pub(crate) fn increase_bpm(&mut self, delta: usize) {
+    pub fn increase_bpm(&mut self, delta: usize) {
         self.bpm += delta;
     }
-    pub(crate) fn decrease_bpm(&mut self, delta: usize) {
+    pub fn decrease_bpm(&mut self, delta: usize) {
         self.bpm -= delta;
     }
 }
