@@ -1,0 +1,15 @@
+[package]
+name = "chordflow_audio"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chordflow_shared = {path = "../chordflow_shared/"}
+chordflow_music_theory = {path = "../chordflow_music_theory/"}
+
+fluidlite = { version = "0.2.1", features = ["bindgen"] }
+midly = "0.5.3"
+rodio = "0.20.1"
+env_logger = "0.11.6"
+log = "0.4.25"
+log4rs = { version = "1.3.0", features = ["file_appender"] }

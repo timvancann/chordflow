@@ -1,37 +1,31 @@
 use std::{
-    env,
-    fs::File,
-    io::{self, Write},
+    io::{self},
     path::PathBuf,
     thread,
     time::{Duration, Instant},
 };
 
-use audio::play;
+use chordflow_audio::audio::{self, create_audio_sink, create_synth, play, setup_audio, Audio};
+use chordflow_music_theory::{
+    note::{Note, NoteLetter},
+    quality::Quality,
+};
+use chordflow_shared::{
+    metronome::Metronome, mode::Mode, practice_state::PracticState, progression::Progression,
+    DiatonicOption, ModeOption,
+};
 use clap::Parser;
-use fluidlite::{Settings, Synth};
-use metronome::Metronome;
-use mode::Mode;
-use music::{note::Note, quality::Quality};
-use practice_state::PracticState;
-use progression::Progression;
-use rodio::{OutputStream, Sink};
 use strum::{AsRefStr, EnumCount, FromRepr, IntoEnumIterator};
 
-mod audio;
-mod metronome;
-mod mode;
-mod music;
-mod practice_state;
-mod progression;
-mod timer;
-mod tui;
+mod keymap;
+mod ui;
 
 use crossterm::event::{self, Event};
+use keymap::handle_keys;
 use ratatui::DefaultTerminal;
 use strum::Display;
 use strum_macros::EnumIter;
-use tui::{keymap::handle_keys, ui::render_ui};
+use ui::render_ui;
 
 #[derive(Parser, Debug)]
 pub struct Cli {
@@ -65,40 +59,12 @@ pub struct Cli {
     pub soundfont: Option<PathBuf>,
 }
 
-fn extract_soundfont() -> PathBuf {
-    let mut path = env::temp_dir();
-    path.push("guitar_practice_soundfont.sf2"); // Use a fixed filename
-
-    if !path.exists() {
-        // Load SoundFont bytes
-        let soundfont_bytes = include_bytes!("../assets/TimGM6mb.sf2");
-
-        // Create and write file
-        let mut file = File::create(&path).expect("Failed to create temp SoundFont file");
-        file.write_all(soundfont_bytes)
-            .expect("Failed to write SoundFont file");
-    }
-
-    path
-}
-
 fn main() -> io::Result<()> {
     let cli = Cli::parse();
 
-    let settings = Settings::new().unwrap();
-
-    let synth = Synth::new(settings).expect("Failed to create synthesizer");
-    synth
-        .sfload(cli.soundfont.unwrap_or(extract_soundfont()), true)
-        .unwrap();
-
-    let (_stream, stream_handle) =
-        OutputStream::try_default().expect("Failed to create audio output stream");
-    let sink = Sink::try_new(&stream_handle).expect("Failed to create Rodio sink");
-
     let mut terminal = ratatui::init();
 
-    let mut app = App::new(synth, sink);
+    let mut app = App::new(setup_audio(cli.soundfont));
 
     app.run(&mut terminal)?;
     ratatui::restore();
@@ -110,20 +76,6 @@ enum AppTab {
     Mode,
     Config,
     Playback,
-}
-
-#[derive(Clone, Copy, Debug, EnumIter, Display, AsRefStr, PartialEq, EnumCount, FromRepr)]
-enum ModeOption {
-    Fourths,
-    Diatonic,
-    Random,
-    Custom,
-}
-
-#[derive(Clone, Copy, Debug, EnumIter, Display, AsRefStr, PartialEq, EnumCount, FromRepr)]
-enum DiatonicOption {
-    Incemental,
-    Random,
 }
 
 struct App {
@@ -142,12 +94,11 @@ struct App {
     metronome: Metronome,
     practice_state: PracticState,
 
-    synth: Synth,
-    sink: Sink,
+    audio: Audio,
 }
 
 impl App {
-    fn new(synth: Synth, sink: Sink) -> Self {
+    fn new(audio: Audio) -> Self {
         Self {
             exit: false,
             selected_tab: AppTab::Mode,
@@ -158,11 +109,10 @@ impl App {
             custom_input_buffer: String::new(),
             custom_parsed_progression: None,
             diatonic_selected_option: DiatonicOption::Incemental,
-            diatonic_selected_root: Note::new(music::note::NoteLetter::C, 0),
+            diatonic_selected_root: Note::new(NoteLetter::C, 0),
             metronome: Metronome::new(100, 2, 4, Instant::now),
             practice_state: PracticState::default(),
-            synth,
-            sink,
+            audio,
         }
     }
     fn next_item<T>(&mut self, current_item: T) -> usize
@@ -191,8 +141,8 @@ impl App {
         self.metronome.start();
         self.selected_tab = AppTab::Playback;
         play(
-            &mut self.synth,
-            &self.sink,
+            &mut self.audio.synth,
+            &self.audio.sink,
             self.practice_state.current_chord,
             self.metronome.duration_per_bar,
             self.metronome.num_beats,
@@ -216,8 +166,8 @@ impl App {
         }
         if self.metronome.has_bar_ended() {
             play(
-                &mut self.synth,
-                &self.sink,
+                &mut self.audio.synth,
+                &self.audio.sink,
                 self.practice_state.current_chord,
                 self.metronome.duration_per_bar,
                 self.metronome.num_beats,

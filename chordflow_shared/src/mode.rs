@@ -1,10 +1,8 @@
 use std::fmt::{self, Display};
 
-use crate::{
-    music::{quality::Quality, scale::Scale},
-    progression::Progression,
-    DiatonicOption,
-};
+use chordflow_music_theory::{quality::Quality, scale::Scale};
+
+use crate::{progression::Progression, DiatonicOption};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Mode {

@@ -1,3 +1,5 @@
+use chordflow_music_theory::{note::generate_all_roots, quality::Quality};
+use chordflow_shared::metronome::Metronome;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -7,11 +9,7 @@ use ratatui::{
 };
 use strum::IntoEnumIterator;
 
-use crate::{
-    metronome::Metronome,
-    music::{note::generate_all_roots, quality::Quality},
-    App, AppTab, DiatonicOption, ModeOption,
-};
+use crate::{App, AppTab, DiatonicOption, ModeOption};
 
 pub fn render_ui(f: &mut Frame, app: &App) {
     let chunks = Layout::default()

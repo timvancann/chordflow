@@ -1,15 +1,8 @@
-use chord::Chord;
-use note::{generate_all_roots, Note};
-use quality::Quality;
+use super::chord::Chord;
+use super::note::{generate_all_roots, Note};
+use super::quality::Quality;
 use rand::{seq::IteratorRandom, Rng};
 use strum::IntoEnumIterator;
-
-pub mod accidental;
-pub mod chord;
-pub mod interval;
-pub mod note;
-pub mod quality;
-pub mod scale;
 
 pub fn random_note() -> Note {
     let mut rng = rand::rng();
