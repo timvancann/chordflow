@@ -1,3 +1,8 @@
+use log::{debug, info, LevelFilter};
+use log4rs::append::file::FileAppender;
+use log4rs::config::{Appender, Config, Root};
+use log4rs::encode::pattern::PatternEncoder;
+use rodio::{OutputStream, Sink};
 use std::{
     io::{self},
     path::PathBuf,
@@ -5,7 +10,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use chordflow_audio::audio::{self, create_audio_sink, create_synth, play, setup_audio, Audio};
+use chordflow_audio::audio::{play, setup_audio, Audio};
 use chordflow_music_theory::{
     note::{Note, NoteLetter},
     quality::Quality,
@@ -59,8 +64,31 @@ pub struct Cli {
     pub soundfont: Option<PathBuf>,
 }
 
+#[cfg(debug_assertions)]
+fn setup_logging() {
+    let file_path = "tui.log";
+    let logfile = FileAppender::builder()
+        // Pattern: https://docs.rs/log4rs/*/log4rs/encode/pattern/index.html
+        .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
+        .build(file_path)
+        .unwrap();
+
+    let config = Config::builder()
+        .appender(Appender::builder().build("logfile", Box::new(logfile)))
+        .build(
+            Root::builder()
+                .appender("logfile")
+                .build(LevelFilter::Debug),
+        )
+        .unwrap();
+
+    let _handle = log4rs::init_config(config);
+}
+
 fn main() -> io::Result<()> {
     let cli = Cli::parse();
+    #[cfg(debug_assertions)]
+    setup_logging();
 
     let mut terminal = ratatui::init();
 
@@ -101,7 +129,7 @@ impl App {
     fn new(audio: Audio) -> Self {
         Self {
             exit: false,
-            selected_tab: AppTab::Mode,
+            selected_tab: AppTab::Playback,
             selected_mode: ModeOption::Fourths,
             fourths_selected_quality: Quality::Major,
             random_selected_qualities: Quality::iter().collect(),
@@ -139,7 +167,6 @@ impl App {
 
     fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         self.metronome.start();
-        self.selected_tab = AppTab::Playback;
         play(
             &mut self.audio.synth,
             &self.audio.sink,
@@ -157,6 +184,7 @@ impl App {
     fn update(&mut self) {
         self.metronome.tick();
         if self.metronome.has_cycle_ended() {
+            info!("Cycle ended");
             if let Mode::Custom(Some(p)) = &self.practice_state.mode {
                 self.metronome.num_bars =
                     p.chords[self.practice_state.next_progression_chord_idx].bars;
@@ -165,6 +193,7 @@ impl App {
             self.metronome.reset();
         }
         if self.metronome.has_bar_ended() {
+            info!("Bar ended");
             play(
                 &mut self.audio.synth,
                 &self.audio.sink,

@@ -2,15 +2,13 @@ use std::{env, fs::File, io::Write, path::PathBuf};
 
 use chordflow_music_theory::chord::Chord;
 use fluidlite::{Settings, Synth};
-use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
-use log4rs::append::file::FileAppender;
-use log4rs::config::{Appender, Config, Logger, Root};
-use log4rs::encode::pattern::PatternEncoder;
+use log::{debug, info};
 use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
 
 const SAMPLE_RATE: usize = 44100;
 
 pub struct Audio {
+    _stream: OutputStream,
     pub synth: Synth,
     pub sink: Sink,
 }
@@ -66,9 +64,12 @@ pub fn play_tick(synth: &mut Synth, tick_time: u64, buffer: &mut [f32]) {
 }
 
 pub fn setup_audio(soundfont_path: Option<PathBuf>) -> Audio {
+    let (sink, _stream) = create_audio_sink();
+
     Audio {
         synth: create_synth(soundfont_path),
-        sink: create_audio_sink(),
+        sink,
+        _stream,
     }
 }
 
@@ -83,24 +84,6 @@ pub fn create_synth(soundfont_path: Option<PathBuf>) -> fluidlite::Synth {
 }
 
 fn extract_soundfont() -> PathBuf {
-    let file_path = "foo.log";
-    let logfile = FileAppender::builder()
-        // Pattern: https://docs.rs/log4rs/*/log4rs/encode/pattern/index.html
-        .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
-        .build(file_path)
-        .unwrap();
-
-    let config = Config::builder()
-        .appender(Appender::builder().build("logfile", Box::new(logfile)))
-        .build(
-            Root::builder()
-                .appender("logfile")
-                .build(LevelFilter::Debug),
-        )
-        .unwrap();
-
-    let _handle = log4rs::init_config(config);
-
     let mut path = env::temp_dir();
     path.push("guitar_practice_soundfont.sf2"); // Use a fixed filename
     debug!("{:?}", path);
@@ -118,10 +101,13 @@ fn extract_soundfont() -> PathBuf {
     path
 }
 
-pub fn create_audio_sink() -> rodio::Sink {
+pub fn create_audio_sink() -> (rodio::Sink, OutputStream) {
     let (_stream, stream_handle) =
         OutputStream::try_default().expect("Failed to create audio output stream");
-    Sink::try_new(&stream_handle).expect("Failed to create Rodio sink")
+    (
+        Sink::try_new(&stream_handle).expect("Failed to create Rodio sink"),
+        _stream,
+    )
 }
 
 pub fn note_to_midi(semitones_from_c: i32) -> u32 {
@@ -138,6 +124,7 @@ pub fn chord_to_midi(chord: Chord) -> Vec<u32> {
 
 pub fn play(synth: &mut Synth, sink: &Sink, chord: Chord, duration: u64, num_beats: usize) {
     let notes = chord_to_midi(chord);
+    info!("Chord notes {:?}", notes);
     let buffer = play_chord_with_ticks(synth, &notes, duration, num_beats);
     let source = SamplesBuffer::new(2, SAMPLE_RATE as u32, buffer);
     sink.append(source);

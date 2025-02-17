@@ -29,11 +29,16 @@ fn App() -> Element {
     // Build cool things ✌️
 
     rsx! {
-        // Global app resources
-        document::Link { rel: "icon", href: FAVICON }
-        document::Link { rel: "stylesheet", href: MAIN_CSS }
-        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+         // Global app resources
+         document::Link { rel: "icon", href: FAVICON }
+         document::Link { rel: "stylesheet", href: MAIN_CSS }
+         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
-        Router::<Route> {}
-    }
+         p {
+             class: "bg-red-400",
+             "hello"
+         }
+
+    //     Router::<Route> {}
+     }
 }

@@ -58,7 +58,7 @@ jobs:
     - name: Build Archive
       shell: bash
       run: |
-        binary_name="chordflow"
+        binary_name="chordflow_tui"
 
         dirname="${binary_name}-${{ env.VERSION }}-${{ matrix.target }}"
         mkdir ${dirname}

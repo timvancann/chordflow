@@ -26,7 +26,7 @@ ChordFlow is a TUI (Terminal User Interface) tool designed to help guitarists/mu
 ## 🚀 Usage
 
 ```bash
-./chordflow --help
+./chordflow_tui --help
 
 Usage: chordflow [OPTIONS]
 
