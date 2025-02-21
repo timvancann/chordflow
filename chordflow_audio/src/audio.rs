@@ -129,3 +129,11 @@ pub fn play(synth: &mut Synth, sink: &Sink, chord: Chord, duration: u64, num_bea
     let source = SamplesBuffer::new(2, SAMPLE_RATE as u32, buffer);
     sink.append(source);
 }
+
+pub fn play_audio(audio: &mut Audio, chord: Chord, duration: u64, num_beats: usize) {
+    let notes = chord_to_midi(chord);
+    info!("Chord notes {:?}", notes);
+    let buffer = play_chord_with_ticks(&mut audio.synth, &notes, duration, num_beats);
+    let source = SamplesBuffer::new(2, SAMPLE_RATE as u32, buffer);
+    audio.sink.append(source);
+}

@@ -7,6 +7,12 @@ edition = "2021"
 
 [dependencies]
 dioxus = { version = "0.6.3", features = ["router", "fullstack"] }
+chordflow_shared = {path = "../chordflow_shared/"}
+chordflow_audio = {path = "../chordflow_audio/"}
+chordflow_music_theory = {path = "../chordflow_music_theory/"}
+strum = { version = "0.27.0", features = ["derive"] }
+strum_macros = "0.27.0"
+tokio = "1.43.0"
 
 [features]
 default = ["desktop"]

@@ -10,6 +10,7 @@ use rand::{rng, seq::IndexedRandom};
 
 use crate::{mode::Mode, DiatonicOption};
 
+#[derive(PartialEq, Clone)]
 pub struct PracticState {
     pub current_chord: Chord,
     pub next_chord: Chord,
