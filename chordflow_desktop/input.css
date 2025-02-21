@@ -2,7 +2,3 @@
 @tailwind components;
 @tailwind utilities;
 
-
-.test-bg{
-	@apply bg-red-500;
-}
