@@ -28,7 +28,9 @@ ChordFlow is a TUI (Terminal User Interface) tool designed to help guitarists/mu
 
 2. Grab the latest [release](https://github.com/timvancann/chordflow/releases)
 
-## 🚀 Usage
+## 🚀 Usage 
+
+### TUI
 
 ```bash
 ./chordflow_tui --help
@@ -42,6 +44,15 @@ Options:
   -s, --soundfont <SOUNDFONT>  Soundfont file path
   -h, --help                   Print help
  ```
+
+### GUI
+
+Install [Dioxus CLI](https://dioxuslabs.com/learn/0.6/getting_started/)
+
+```dash
+cd chordflow_desktop
+dx serve
+```
 
 ## 🏗️ Roadmap
 
