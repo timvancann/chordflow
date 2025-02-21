@@ -583,7 +583,13 @@ dependencies = [
 name = "chordflow_desktop"
 version = "0.1.0"
 dependencies = [
+ "chordflow_audio",
+ "chordflow_music_theory",
+ "chordflow_shared",
  "dioxus",
+ "strum 0.27.0",
+ "strum_macros 0.27.0",
+ "tokio",
 ]
 
 [[package]]
@@ -624,7 +630,6 @@ dependencies = [
  "log",
  "log4rs",
  "ratatui",
- "rodio",
  "serde",
  "strum 0.27.0",
  "strum_macros 0.27.0",
