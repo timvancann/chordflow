@@ -1,12 +1,29 @@
 use std::time::{Duration, Instant};
 
 use chordflow_audio::audio::{play_audio, setup_audio};
-use chordflow_shared::{metronome::Metronome, practice_state::PracticState};
+use chordflow_music_theory::{
+    note::Note,
+    quality::Quality,
+    scale::{Scale, ScaleType},
+};
+use chordflow_shared::{
+    metronome::Metronome,
+    mode::Mode,
+    practice_state::{self, PracticState},
+    DiatonicOption, ModeOption,
+};
 use dioxus::prelude::*;
+use strum::IntoEnumIterator;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/styling/main.css");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
+
+// orange-400
+// stone-500
+// zinc-900
+// amber-100
+// stone-300
 
 fn main() {
     dioxus::launch(App);
@@ -24,6 +41,8 @@ fn App() -> Element {
         practice_state,
     );
 
+    let selected_mode = use_signal(|| ModeOption::Fourths);
+
     let num_bars = use_signal(|| metronome.read().num_bars);
     let num_beats = use_signal(|| metronome.read().num_beats);
 
@@ -32,18 +51,20 @@ fn App() -> Element {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        body {
+            class: "bg-zinc-900 text-stone-300 w-screen h-screen",
 
-        div{
-            class: "container mx-auto mt-4",
-        MetronomeDisplay {
-            current_bar: *current_bar.read(),
-            current_beat: *current_beat.read(),
-            num_bars: *num_bars.read(),
-            num_beats: *num_beats.read(),
-        }
+        div { class: "container mx-auto space-y-8 bg-zinc-900 text-stone-300",
 
-        PracticeStateDisplay {
-            practice_state: practice_state.read().clone()
+            ModeSelectionDisplay { practice_state, selected_mode }
+            MetronomeDisplay {
+                current_bar: *current_bar.read(),
+                current_beat: *current_beat.read(),
+                num_bars: *num_bars.read(),
+                num_beats: *num_beats.read(),
+            }
+
+            PracticeStateDisplay { practice_state: practice_state.read().clone() }
         }
         }
     }
@@ -95,6 +116,60 @@ pub fn use_timer(
 }
 
 #[derive(PartialEq, Props, Clone)]
+struct ModeSelectionDisplayProps {
+    practice_state: Signal<PracticState>,
+    selected_mode: Signal<ModeOption>,
+}
+
+#[component]
+fn ModeSelectionDisplay(props: ModeSelectionDisplayProps) -> Element {
+    let mut selected_mode = props.selected_mode;
+    let mut practice_state = props.practice_state;
+    let selected_style = "border-2 border-orange-400";
+    rsx! {
+        div { class: "space-y-4",
+            div { class: "flex justify-center gap-2",
+                for mode in ModeOption::iter() {
+                    div {
+                        class: format!("px-2 py-1 cursor-pointer rounded-full bg-stone-500  {}", if mode == *selected_mode.read() { selected_style } else { "" }),
+                        onclick: move |_| {
+                            selected_mode.set(mode);
+                            match *selected_mode.read() {
+                                ModeOption::Fourths => {
+                                    practice_state
+                                        .write()
+                                        .set_mode(
+                                            Mode::Fourths(chordflow_music_theory::quality::Quality::Minor),
+                                        )
+                                }
+                                ModeOption::Random => {
+                                    practice_state.write().set_mode(Mode::Random(Quality::iter().collect()))
+                                }
+                                ModeOption::Custom => practice_state.write().set_mode(Mode::Custom(None)),
+                                ModeOption::Diatonic => {
+                                    practice_state
+                                        .write()
+                                        .set_mode(
+                                            Mode::Diatonic(
+                                                Scale::new(
+                                                    Note::new(chordflow_music_theory::note::NoteLetter::C, 0),
+                                                    ScaleType::Diatonic,
+                                                ),
+                                                DiatonicOption::Incemental,
+                                            ),
+                                        )
+                                }
+                            };
+                        },
+                        {mode.to_string()}
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[derive(PartialEq, Props, Clone)]
 struct MetronomeDisplayProps {
     current_bar: usize,
     current_beat: usize,
@@ -113,12 +188,11 @@ fn MetronomeDisplay(props: MetronomeDisplayProps) -> Element {
                     }
                     for tick in 0..props.num_beats {
                         if bar < props.current_bar || (bar == props.current_bar && tick < props.current_beat) {
-                            div { class: format!("w-8 h-8 rounded-full transition-colors bg-blue-500") }
+                            div { class: format!("w-8 h-8 rounded-full transition-colors bg-amber-100") }
                         } else if bar < props.current_bar || (bar == props.current_bar && tick == props.current_beat) {
-                            div { class: format!("w-8 h-8 rounded-full transition-colors bg-blue-800") }
-                            }
-                        else {
-                            div { class: format!("w-8 h-8 rounded-full transition-colors bg-blue-100") }
+                            div { class: format!("w-8 h-8 rounded-full transition-colors bg-orange-400") }
+                        } else {
+                            div { class: format!("w-8 h-8 rounded-full transition-colors bg-stone-300") }
                         }
                     }
                 }
@@ -134,13 +208,9 @@ struct PracticeStateDisplayProps {
 #[component]
 fn PracticeStateDisplay(props: PracticeStateDisplayProps) -> Element {
     rsx! {
-        p {
-            class: "text-red-500",
-            "Current Chord: {props.practice_state.current_chord}"
-        }
-        p {
-            class: "text-red-500",
-            "Next Chord: {props.practice_state.next_chord}"
+        div{
+        p { class: "", "Current Chord: {props.practice_state.current_chord}" }
+        p { class: "", "Next Chord: {props.practice_state.next_chord}" }
         }
     }
 }
