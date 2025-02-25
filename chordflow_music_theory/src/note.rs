@@ -55,7 +55,7 @@ impl NoteLetter {
         }
     }
 
-    pub fn from_str(s: &str) -> NoteLetter {
+    pub fn from_string(s: &str) -> NoteLetter {
         match s {
             "C" => NoteLetter::C,
             "D" => NoteLetter::D,

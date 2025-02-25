@@ -26,7 +26,7 @@ pub enum Quality {
 }
 
 impl Quality {
-    pub fn from_str(quality: &str) -> Quality {
+    pub fn from_string(quality: &str) -> Quality {
         match quality {
             "" => Quality::Major,
             "m" => Quality::Minor,

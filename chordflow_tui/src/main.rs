@@ -1,24 +1,19 @@
-use log::{info, LevelFilter};
+use chordflow_shared::cli::parse_cli;
+use chordflow_shared::metronome::{
+    calculate_duration_per_bar, setup_metronome, MetronomeCommand, MetronomeEvent,
+};
+use chordflow_shared::practice_state::ConfigState;
+use log::LevelFilter;
 use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
-use std::{
-    io::{self},
-    path::PathBuf,
-    thread,
-    time::{Duration, Instant},
-};
+use std::io;
+use std::sync::mpsc::{Receiver, Sender};
+use std::time::{Duration, Instant};
 
-use chordflow_audio::audio::{play, setup_audio, Audio};
-use chordflow_music_theory::{
-    note::{Note, NoteLetter},
-    quality::Quality,
-};
-use chordflow_shared::{
-    metronome::Metronome, mode::Mode, practice_state::PracticState, progression::Progression,
-    DiatonicOption, ModeOption,
-};
-use clap::Parser;
+use chordflow_audio::audio::{setup_audio, AudioCommand};
+use chordflow_music_theory::quality::Quality;
+use chordflow_shared::{mode::Mode, practice_state::PracticState, DiatonicOption, ModeOption};
 use strum::{AsRefStr, EnumCount, FromRepr, IntoEnumIterator};
 
 mod keymap;
@@ -30,38 +25,6 @@ use ratatui::DefaultTerminal;
 use strum::Display;
 use strum_macros::EnumIter;
 use ui::render_ui;
-
-#[derive(Parser, Debug)]
-pub struct Cli {
-    #[arg(
-        long,
-        value_name = "INT",
-        help = "BPM (Beats per minute)",
-        default_value_t = 100
-    )]
-    pub bpm: usize,
-
-    #[arg(
-        short,
-        long,
-        value_name = "INT",
-        help = "Number of bars per chord",
-        default_value_t = 2
-    )]
-    pub bars_per_chord: usize,
-
-    #[arg(
-        short,
-        long,
-        value_name = "INT",
-        help = "Number of beats per bar",
-        default_value_t = 4
-    )]
-    pub ticks_per_bar: usize,
-
-    #[arg(short, long, help = "Soundfont file path")]
-    pub soundfont: Option<PathBuf>,
-}
 
 #[cfg(debug_assertions)]
 fn setup_logging() {
@@ -85,13 +48,14 @@ fn setup_logging() {
 }
 
 fn main() -> io::Result<()> {
-    let cli = Cli::parse();
+    let cli = parse_cli();
+
     #[cfg(debug_assertions)]
     setup_logging();
 
     let mut terminal = ratatui::init();
-
-    let mut app = App::new(setup_audio(cli.soundfont));
+    let tx_audio = setup_audio(cli.soundfont);
+    let mut app = App::new(tx_audio, cli.bpm, cli.bars_per_chord, cli.ticks_per_bar);
 
     app.run(&mut terminal)?;
     ratatui::restore();
@@ -110,38 +74,51 @@ struct App {
     selected_tab: AppTab,
     selected_mode: ModeOption,
 
-    fourths_selected_quality: Quality,
-    random_selected_qualities: Vec<Quality>,
+    bars_per_chord: usize,
+    ticks_per_bar: usize,
+    bpm: usize,
+    current_bar: usize,
+    current_tick: usize,
+
+    config_state: ConfigState,
+
     random_qualities_cursor: Quality,
     custom_input_buffer: String,
-    custom_parsed_progression: Option<Progression>,
-    diatonic_selected_option: DiatonicOption,
-    diatonic_selected_root: Note,
-
-    metronome: Metronome,
     practice_state: PracticState,
 
-    audio: Audio,
+    tx_audio: Sender<AudioCommand>,
+    tx_metronome: Sender<MetronomeCommand>,
+    rx_metronome: Receiver<MetronomeEvent>,
 }
 
 impl App {
-    fn new(audio: Audio) -> Self {
+    fn new(
+        tx_audio: Sender<AudioCommand>,
+        bpm: usize,
+        bars_per_chord: usize,
+        ticks_per_bar: usize,
+    ) -> Self {
+        let (tx_metronome, rx_metronome) =
+            setup_metronome(bpm, bars_per_chord, ticks_per_bar, Instant::now);
         Self {
             exit: false,
             selected_tab: AppTab::Playback,
             selected_mode: ModeOption::Fourths,
-            fourths_selected_quality: Quality::Major,
-            random_selected_qualities: Quality::iter().collect(),
+            config_state: ConfigState::default(),
             random_qualities_cursor: Quality::Major,
             custom_input_buffer: String::new(),
-            custom_parsed_progression: None,
-            diatonic_selected_option: DiatonicOption::Incemental,
-            diatonic_selected_root: Note::new(NoteLetter::C, 0),
-            metronome: Metronome::new(100, 2, 4, Instant::now),
             practice_state: PracticState::default(),
-            audio,
+            bars_per_chord,
+            ticks_per_bar,
+            current_bar: 0,
+            current_tick: 0,
+            bpm,
+            tx_audio,
+            tx_metronome,
+            rx_metronome,
         }
     }
+
     fn next_item<T>(&mut self, current_item: T) -> usize
     where
         T: EnumCount + IntoEnumIterator + PartialEq,
@@ -165,42 +142,18 @@ impl App {
     }
 
     fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        self.metronome.start();
-        play(
-            &mut self.audio.synth,
-            &self.audio.sink,
+        let _ = self.tx_audio.send(AudioCommand::PlayChord((
             self.practice_state.current_chord,
-            self.metronome.duration_per_bar,
-            self.metronome.num_beats,
-        );
+            calculate_duration_per_bar(self.bpm, self.ticks_per_bar).duration_per_bar,
+            self.ticks_per_bar,
+        )));
+
         while !self.exit {
             terminal.draw(|f| render_ui(f, self))?;
-            self.update();
             self.handle_events()?;
+            self.update();
         }
         Ok(())
-    }
-    fn update(&mut self) {
-        self.metronome.tick();
-        if self.metronome.has_cycle_ended() {
-            info!("Cycle ended");
-            if let Mode::Custom(Some(p)) = &self.practice_state.mode {
-                self.metronome.num_bars =
-                    p.chords[self.practice_state.next_progression_chord_idx].bars;
-            }
-            self.practice_state.next_chord();
-            self.metronome.reset();
-        }
-        if self.metronome.has_bar_ended() {
-            info!("Bar ended");
-            play(
-                &mut self.audio.synth,
-                &self.audio.sink,
-                self.practice_state.current_chord,
-                self.metronome.duration_per_bar,
-                self.metronome.num_beats,
-            );
-        }
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
@@ -209,7 +162,45 @@ impl App {
                 handle_keys(key, self);
             }
         }
-        thread::sleep(Duration::from_millis(10));
         Ok(())
     }
+
+    fn update(&mut self) {
+        while let Ok(event) = self.rx_metronome.try_recv() {
+            match event {
+                MetronomeEvent::CycleComplete => {
+                    if let Mode::Custom(Some(p)) = &self.practice_state.mode {
+                        self.bars_per_chord =
+                            p.chords[self.practice_state.next_progression_chord_idx].bars;
+                    }
+                    let _ = self
+                        .tx_metronome
+                        .send(MetronomeCommand::SetBars(self.bars_per_chord));
+                    let _ = self.tx_metronome.send(MetronomeCommand::Reset);
+                    self.practice_state.next_chord();
+                    self.current_bar = 0;
+                    self.current_tick = 0;
+                }
+                MetronomeEvent::BarComplete(b) => {
+                    let _ = self.tx_audio.send(AudioCommand::PlayChord((
+                        self.practice_state.current_chord,
+                        calculate_duration_per_bar(self.bpm, self.ticks_per_bar).duration_per_bar,
+                        self.ticks_per_bar,
+                    )));
+                    self.current_bar = b;
+                    self.current_tick = 0;
+                }
+                MetronomeEvent::Tick(t) => self.current_tick = t,
+            };
+        }
+    }
+}
+
+fn sync_metronome_bars(app: &mut App) {
+    if let Mode::Custom(Some(p)) = &app.practice_state.mode {
+        app.bars_per_chord = p.chords[app.practice_state.next_progression_chord_idx].bars;
+    }
+    let _ = app
+        .tx_metronome
+        .send(MetronomeCommand::SetBars(app.bars_per_chord));
 }

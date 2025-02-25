@@ -12,7 +12,7 @@ pub enum Accidental {
 }
 
 impl Accidental {
-    pub fn from_str(accidental: &str) -> Accidental {
+    pub fn from_string(accidental: &str) -> Accidental {
         match accidental {
             "#" => Accidental::Sharp,
             "b" => Accidental::Flat,

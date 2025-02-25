@@ -43,7 +43,7 @@ impl ProgressionChord {
     /// <bars><note><accidental><quality>, where accidental and quality are optional
     /// Examples:
     /// 3C 2Bm 1F#aug
-    pub fn from_str(str: String) -> Result<Vec<ProgressionChord>> {
+    pub fn from_string(str: String) -> Result<Vec<ProgressionChord>> {
         let re =
             Regex::new(r"(?<n>\d)(?<l>[ABCDEFGabcdefgh])(?<a>[#b])?(?<q>M|m|aug|dim|maj7|7|m7b5)?")
                 .unwrap();
@@ -53,11 +53,11 @@ impl ProgressionChord {
             results.push((
                 res.name("n").unwrap().as_str().parse::<usize>().unwrap(),
                 res.name("l")
-                    .map_or(NoteLetter::C, |l| NoteLetter::from_str(l.as_str())),
+                    .map_or(NoteLetter::C, |l| NoteLetter::from_string(l.as_str())),
                 res.name("a")
-                    .map_or(Accidental::Natural, |a| Accidental::from_str(a.as_str())),
+                    .map_or(Accidental::Natural, |a| Accidental::from_string(a.as_str())),
                 res.name("q")
-                    .map_or(Quality::Major, |q| Quality::from_str(q.as_str())),
+                    .map_or(Quality::Major, |q| Quality::from_string(q.as_str())),
             ));
         }
 
@@ -80,7 +80,7 @@ mod tests {
 
     #[test]
     fn test_progression_chord_from_str() {
-        let results = ProgressionChord::from_str("3C 2Bm 1F#aug".into());
+        let results = ProgressionChord::from_string("3C 2Bm 1F#aug".into());
         assert!(results.is_ok());
         assert_eq!(
             results.unwrap(),

@@ -573,10 +573,13 @@ dependencies = [
  "chordflow_shared",
  "env_logger 0.11.6",
  "fluidlite",
+ "futures",
  "log",
  "log4rs",
  "midly",
  "rodio",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -609,10 +612,14 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chordflow_music_theory",
+ "clap 4.5.31",
+ "futures",
  "rand 0.9.0",
  "regex",
  "strum 0.27.0",
  "strum_macros 0.27.0",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -623,16 +630,18 @@ dependencies = [
  "chordflow_audio",
  "chordflow_music_theory",
  "chordflow_shared",
- "clap 4.5.27",
  "color-eyre",
  "crossterm",
  "figlet-rs",
+ "futures",
  "log",
  "log4rs",
  "ratatui",
  "serde",
  "strum 0.27.0",
  "strum_macros 0.27.0",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -702,9 +711,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.27"
+version = "4.5.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "769b0145982b4b48713e01ec42d61614425f27b7058bda7180a3a41f30104796"
+checksum = "027bb0d98429ae334a8698531da7077bdf906419543a35a55c2cb1b66437d767"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -712,9 +721,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.27"
+version = "4.5.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b26884eb4b57140e4d2d93652abfa49498b938b3c9179f9fc487b0acc3edad7"
+checksum = "5589e0cba072e0f3d23791efac0fd8627b49c829c196a492e88168e6a669d863"
 dependencies = [
  "anstream",
  "anstyle",
@@ -724,9 +733,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.5.24"
+version = "4.5.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54b755194d6389280185988721fffba69495eed5ee9feeee9a599b53db80318c"
+checksum = "bf4ced95c6f4a675af3da73304b9ac4ed991640c36374e4b46795c49e17cf1ed"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -1115,6 +1124,7 @@ checksum = "829d955a0bb380ef178a640b91779e3987da38c9aea133b20614cfed8cdea9c6"
 dependencies = [
  "bitflags 2.8.0",
  "crossterm_winapi",
+ "futures-core",
  "mio",
  "parking_lot",
  "rustix",
@@ -5292,6 +5302,7 @@ dependencies = [
  "bytes",
  "libc",
  "mio",
+ "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",

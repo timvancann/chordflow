@@ -1,5 +1,4 @@
 use chordflow_music_theory::{note::generate_all_roots, quality::Quality};
-use chordflow_shared::metronome::Metronome;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -121,7 +120,7 @@ fn render_diatonic_config(f: &mut Frame, area: Rect, app: &App, keymap_chunks: R
     );
     let items: Vec<ListItem> = DiatonicOption::iter()
         .map(|mode| {
-            let style = if mode == app.diatonic_selected_option {
+            let style = if mode == app.config_state.diatonic_option {
                 Style::default()
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD)
@@ -135,7 +134,7 @@ fn render_diatonic_config(f: &mut Frame, area: Rect, app: &App, keymap_chunks: R
     let roots: Vec<ListItem> = all_roots
         .iter()
         .map(|note| {
-            let style = if note == &app.diatonic_selected_root {
+            let style = if note == &app.config_state.diatonic_root {
                 Style::default()
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD)
@@ -199,7 +198,7 @@ fn render_custom_config(f: &mut Frame, area: Rect, app: &App, keymap_chunks: Rec
             .title(" Input "),
     );
 
-    let progression = match app.custom_parsed_progression.clone() {
+    let progression = match app.config_state.progression.clone() {
         Some(progression) => progression
             .chords
             .iter()
@@ -244,7 +243,11 @@ fn render_random_config(f: &mut Frame, area: Rect, app: &App, keymap_chunks: Rec
     );
     let items: Vec<ListItem> = Quality::iter()
         .map(|quality| {
-            let prefix = if app.random_selected_qualities.contains(&quality) {
+            let prefix = if app
+                .config_state
+                .random_selected_qualities
+                .contains(&quality)
+            {
                 "[✔]"
             } else {
                 "[ ]"
@@ -294,7 +297,7 @@ fn render_fourths_config(f: &mut Frame, area: Rect, app: &App, keymap_chunks: Re
 
     let items: Vec<ListItem> = Quality::iter()
         .map(|selection| {
-            let style = if selection == app.fourths_selected_quality {
+            let style = if selection == app.config_state.fourths_selected_quality {
                 Style::default()
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD)
@@ -341,20 +344,14 @@ fn render_playback_tab(app: &App, f: &mut Frame, area: ratatui::layout::Rect, ke
         )
         .split(area);
 
-    let metronome_display = generate_metronome_display(&app.metronome);
+    let metronome_display = generate_metronome_display(app);
 
-    let debug_text = format!(
-        "Bar: {} Beat: {} Ended: {}",
-        app.metronome.current_bar, app.metronome.current_beat, app.metronome.beat_timer.ended
-    );
+    let debug_text = format!("Bar: {} Beat: {}", app.current_bar, app.current_tick);
 
     let metronome_paragraph = Paragraph::new(vec![
         Line::from(vec![
             Span::styled("Speed: ".to_string(), Style::default()),
-            Span::styled(
-                format!("{} ", app.metronome.bpm),
-                Style::default().fg(Color::Yellow),
-            ),
+            Span::styled(format!("{} ", app.bpm), Style::default().fg(Color::Yellow)),
             Span::styled("BPM".to_string(), Style::default()),
         ])
         .alignment(Alignment::Left),
@@ -406,17 +403,15 @@ fn render_playback_tab(app: &App, f: &mut Frame, area: ratatui::layout::Rect, ke
     f.render_widget(chord_paragraph, chunks[1]);
 }
 
-fn generate_metronome_display(metronome: &Metronome) -> String {
+fn generate_metronome_display(app: &App) -> String {
     let mut metronome_display = String::new();
 
-    for bar in 0..metronome.num_bars {
+    for bar in 0..app.bars_per_chord {
         if bar > 0 {
             metronome_display.push_str(" | "); // Separate bars
         }
-        for tick in 0..metronome.num_beats {
-            if bar < metronome.current_bar
-                || (bar == metronome.current_bar && tick <= metronome.current_beat)
-            {
+        for tick in 0..app.ticks_per_bar {
+            if bar < app.current_bar || (bar == app.current_bar && tick <= app.current_tick) {
                 metronome_display.push('⬛');
             } else {
                 metronome_display.push('⬜');
@@ -425,32 +420,4 @@ fn generate_metronome_display(metronome: &Metronome) -> String {
     }
 
     metronome_display
-}
-
-#[cfg(test)]
-mod tests {
-
-    use std::time::Instant;
-
-    use super::*;
-
-    #[test]
-    fn test_generate_metronome_display() {
-        let mut metronome = Metronome::new(100, 2, 4, Instant::now);
-        assert_eq!(
-            generate_metronome_display(&metronome),
-            "⬛⬜⬜⬜ | ⬜⬜⬜⬜"
-        );
-
-        metronome.current_beat = 2;
-        assert_eq!(
-            generate_metronome_display(&metronome),
-            "⬛⬛⬛⬜ | ⬜⬜⬜⬜"
-        );
-        metronome.current_bar = 1;
-        assert_eq!(
-            generate_metronome_display(&metronome),
-            "⬛⬛⬛⬛ | ⬛⬛⬛⬜"
-        );
-    }
 }

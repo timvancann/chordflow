@@ -8,7 +8,16 @@ use chordflow_music_theory::{
 };
 use rand::{rng, seq::IndexedRandom};
 
-use crate::{mode::Mode, DiatonicOption};
+use crate::{mode::Mode, progression::Progression, DiatonicOption};
+
+#[derive(Clone, PartialEq, Default)]
+pub struct ConfigState {
+    pub fourths_selected_quality: Quality,
+    pub progression: Option<Progression>,
+    pub random_selected_qualities: Vec<Quality>,
+    pub diatonic_root: Note,
+    pub diatonic_option: DiatonicOption,
+}
 
 #[derive(PartialEq, Clone)]
 pub struct PracticState {
