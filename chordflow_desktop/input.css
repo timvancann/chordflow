@@ -2,3 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+.button {
+  @apply  border-[1px] border-tokyoNight-comment shadow-lg text-tokyoNight-blue p-2 rounded-md hover:border-tokyoNight-bg hover:bg-tokyoNight-bg hover:text-tokyoNight-fg transition-all cursor-pointer active:shadow-none ;
+}
+
+.selected-button {
+@apply p-2 rounded-md  transition-all cursor-pointer shadow-none bg-tokyoNight-comment text-tokyoNight-bg_dark font-semibold
+}

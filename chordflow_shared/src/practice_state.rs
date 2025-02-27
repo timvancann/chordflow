@@ -1,3 +1,5 @@
+use std::ops::Not;
+
 use chordflow_music_theory::{
     chord::Chord,
     interval::Interval,
@@ -7,16 +9,28 @@ use chordflow_music_theory::{
     util::random_chord,
 };
 use rand::{rng, seq::IndexedRandom};
+use strum::IntoEnumIterator;
 
 use crate::{mode::Mode, progression::Progression, DiatonicOption};
 
-#[derive(Clone, PartialEq, Default)]
+#[derive(Clone, PartialEq)]
 pub struct ConfigState {
     pub fourths_selected_quality: Quality,
     pub progression: Option<Progression>,
     pub random_selected_qualities: Vec<Quality>,
     pub diatonic_root: Note,
     pub diatonic_option: DiatonicOption,
+}
+impl Default for ConfigState {
+    fn default() -> Self {
+        ConfigState {
+            fourths_selected_quality: Quality::default(),
+            progression: Option::default(),
+            random_selected_qualities: Quality::iter().collect(),
+            diatonic_root: Note::default(),
+            diatonic_option: DiatonicOption::default(),
+        }
+    }
 }
 
 #[derive(PartialEq, Clone)]

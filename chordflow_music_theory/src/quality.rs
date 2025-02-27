@@ -9,19 +9,19 @@ pub enum Quality {
     #[default]
     #[strum(to_string = "")]
     Major,
-    #[strum(to_string = "m")]
+    #[strum(to_string = "-")]
     Minor,
-    #[strum(to_string = "dim")]
+    #[strum(to_string = "o")]
     Diminished,
-    #[strum(to_string = "aug")]
+    #[strum(to_string = "+")]
     Augmented,
     #[strum(to_string = "7")]
     Dominant,
-    #[strum(to_string = "maj7")]
+    #[strum(to_string = "Δ")]
     MajorSeventh,
-    #[strum(to_string = "m7")]
+    #[strum(to_string = "-7")]
     MinorSeventh,
-    #[strum(to_string = "m7b5")]
+    #[strum(to_string = "ø")]
     HalfDiminished,
 }
 
@@ -30,8 +30,8 @@ impl Quality {
         match quality {
             "" => Quality::Major,
             "m" => Quality::Minor,
-            "dim" => Quality::Diminished,
-            "aug" => Quality::Augmented,
+            "o" => Quality::Diminished,
+            "+" => Quality::Augmented,
             "7" => Quality::Dominant,
             "maj7" => Quality::MajorSeventh,
             "m7" => Quality::MajorSeventh,
