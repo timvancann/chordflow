@@ -10,9 +10,9 @@ use chordflow_shared::{
     ModeOption,
 };
 use components::{
-    header::Header, metronome::MetronomeDisplay, metronome_settings::MetronomSettingsDisplay,
-    mode_selection::ModeSelectionDisplay, play_controls::PlayControls,
-    practice_state::PracticeStateDisplay,
+    config_state::ConfigStateDisplay, header::Header, metronome::MetronomeDisplay,
+    metronome_settings::MetronomSettingsDisplay, mode_selection::ModeSelectionDisplay,
+    play_controls::PlayControls, practice_state::PracticeStateDisplay,
 };
 use dioxus::prelude::*;
 use hooks::use_metronome::use_metronome;
@@ -86,7 +86,7 @@ fn App() -> Element {
                     }
                 }
                 div { class: "flex-1 space-x-4",
-                    div { class: " bg-tokyoNight-bg_highlight/70 p-4 rounded-md", "foobar" }
+                    div { class: " bg-tokyoNight-bg_highlight/70 p-4 rounded-md", ConfigStateDisplay {} }
                 }
             }
         }

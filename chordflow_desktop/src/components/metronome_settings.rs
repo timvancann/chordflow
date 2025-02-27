@@ -6,7 +6,7 @@ use dioxus_free_icons::{
     Icon,
 };
 
-use crate::{MetronomeSignal, MetronomeState};
+use crate::{components::buttons::Button, MetronomeSignal, MetronomeState};
 
 #[component]
 pub fn MetronomSettingsDisplay() -> Element {
@@ -18,20 +18,20 @@ pub fn MetronomSettingsDisplay() -> Element {
     rsx! {
         div { class: "flex-col",
             div { class: "flex items-center justify-center align-middle space-x-4",
-                div {
-                    class: "button space-x-1 flex align-middle items-center",
+                Button {
+                    icon: rsx! {
+                        Icon { icon: HiMinusCircle }
+                    },
                     onclick: |_| {
                         let mut metronome_state: Signal<MetronomeState> = use_context();
                         metronome_state.write().bpm -= 2;
                         change_speed(MetronomeCommand::DecreaseBpm(2));
                     },
-                    Icon { icon: HiMinusCircle }
                 }
                 div { class: "space-x-1 align-middle inline-block",
 
                     span { class: "font-bold text-lg", {metronome_state.read().bpm.to_string()} }
                     span { "bpm" }
-
                 }
                 div {
                     class: "button space-x-1 flex align-middle items-center",
@@ -42,7 +42,6 @@ pub fn MetronomSettingsDisplay() -> Element {
                     },
                     Icon { icon: HiPlusCircle }
                 }
-
             }
         }
     }
