@@ -1,4 +1,4 @@
-use chordflow_shared::practice_state::{self, PracticState};
+use chordflow_shared::practice_state::PracticState;
 
 use dioxus::prelude::*;
 

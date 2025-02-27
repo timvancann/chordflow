@@ -1,12 +1,4 @@
-use std::sync::mpsc::Sender;
-
-use chordflow_audio::audio::AudioCommand;
-use chordflow_shared::{
-    metronome::{calculate_duration_per_bar, MetronomeCommand},
-    mode::{update_mode_from_state, Mode},
-    practice_state::{ConfigState, PracticState},
-    ModeOption,
-};
+use chordflow_shared::ModeOption;
 use dioxus::prelude::*;
 use strum::IntoEnumIterator;
 

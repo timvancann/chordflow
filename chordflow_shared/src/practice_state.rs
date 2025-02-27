@@ -101,7 +101,10 @@ impl PracticState {
                 let note = *generate_all_roots().choose(&mut rand).unwrap();
                 Chord::new(note, *qs.choose(&mut rand).unwrap())
             }
-            Mode::Diatonic(scale, _) => Chord::new(scale.root, Quality::Major),
+            Mode::Diatonic(scale, _) => {
+                self.next_scale_interval = scale.intervals[0];
+                Chord::new(scale.root, Quality::Major)
+            }
             Mode::Custom(p) => p.clone().expect("woops").chords[0].chord,
         };
         self.next_chord = self

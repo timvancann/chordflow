@@ -3,7 +3,7 @@ use std::sync::mpsc::Sender;
 use chordflow_audio::audio::AudioCommand;
 use chordflow_shared::{
     metronome::{calculate_duration_per_bar, MetronomeCommand},
-    practice_state::{self, PracticState},
+    practice_state::PracticState,
 };
 use dioxus::prelude::*;
 use dioxus_free_icons::{
@@ -38,7 +38,6 @@ pub fn PlayControls() -> Element {
         )));
     }
     rsx! {
-
         div { class: "flex justify-center items-center space-x-4",
             Button {
                 onclick: |_| restart(),

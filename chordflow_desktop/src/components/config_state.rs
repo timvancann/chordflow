@@ -7,7 +7,7 @@ use crate::components::buttons::ToggleButton;
 
 #[component]
 pub fn ConfigStateDisplay() -> Element {
-    let config_state: Signal<ConfigState> = use_context();
+    let mut config_state: Signal<ConfigState> = use_context();
     rsx! {
         div { class: "flex-col space-y-4",
             SingleConfigStateDisplay {
@@ -34,20 +34,50 @@ pub fn ConfigStateDisplay() -> Element {
                         div { class: "flex space-x-2",
                             for q in DiatonicOption::iter() {
                                 ToggleButton {
-                                    onclick: |_| {},
+                                    onclick: move |_| {
+                                        let mut c: Signal<ConfigState> = use_context();
+                                        c.write().diatonic_option = q;
+                                    },
                                     is_selected: q == config_state.read().diatonic_option,
                                     text: q.to_string(),
                                 }
                             }
                         }
                         span { " | " }
-                        select { class: "select h-9", onchange: |_| {},
-                            for root in generate_all_roots() {
+                        select {
+                            class: "select h-9",
+                            onchange: |e| {
+                                let index = e.value().parse::<usize>().unwrap();
+                                let mut c: Signal<ConfigState> = use_context();
+                                c.write().diatonic_root = generate_all_roots()[index];
+                            },
+                            for (i , root) in generate_all_roots().into_iter().enumerate() {
                                 option {
                                     label: root.to_string(),
-                                    value: root.to_string(),
+                                    value: i,
                                     selected: root == config_state.read().diatonic_root,
                                 }
+                            }
+                        }
+                    }
+                },
+            }
+
+            SingleConfigStateDisplay {
+                title: "Random Chords",
+                children: rsx! {
+                    div { class: "flex space-x-2 text-sm",
+                        for q in Quality::iter() {
+                            ToggleButton {
+                                onclick: move |_| {
+                                    if config_state.read().random_selected_qualities.contains(&q) {
+                                        config_state.write().random_selected_qualities.retain(|s| *s != q);
+                                    } else {
+                                        config_state.write().random_selected_qualities.push(q);
+                                    }
+                                },
+                                is_selected: config_state.read().random_selected_qualities.contains(&q),
+                                text: q.name(),
                             }
                         }
                     }
