@@ -7,7 +7,10 @@ use chordflow_shared::{
 };
 use dioxus::prelude::*;
 use dioxus_free_icons::{
-    icons::io_icons::{IoReloadCircle, IoSaveSharp},
+    icons::{
+        fa_solid_icons::{FaPause, FaPlay},
+        io_icons::{IoReloadCircle, IoSaveSharp},
+    },
     Icon,
 };
 
@@ -54,6 +57,28 @@ pub fn PlayControls() -> Element {
                     Icon { icon: IoSaveSharp }
                 },
                 text: "Apply Changes",
+            }
+            Button {
+                onclick: |_| {
+                    let metronome: MetronomeSignal = use_context();
+                    let tx_audio: Signal<Sender<AudioCommand>> = use_context();
+                    let _ = metronome.read().0.send(MetronomeCommand::Play);
+                    let _ = tx_audio.read().send(AudioCommand::Play);
+                },
+                icon: rsx! {
+                    Icon { icon: FaPlay }
+                },
+            }
+            Button {
+                onclick: |_| {
+                    let metronome: MetronomeSignal = use_context();
+                    let tx_audio: Signal<Sender<AudioCommand>> = use_context();
+                    let _ = metronome.read().0.send(MetronomeCommand::Pause);
+                    let _ = tx_audio.read().send(AudioCommand::Pause);
+                },
+                icon: rsx! {
+                    Icon { icon: FaPause }
+                },
             }
         }
     }

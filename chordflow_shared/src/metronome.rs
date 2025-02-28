@@ -99,7 +99,8 @@ pub enum MetronomeCommand {
     IncreaseBpm(usize),
     Reset,
     SetBars(usize),
-    Stop,
+    Pause,
+    Play,
 }
 
 pub enum MetronomeEvent {
@@ -122,7 +123,7 @@ pub fn setup_metronome(
 
     thread::spawn(move || {
         let mut metronome = Metronome::new(bpm, num_bars, num_beats, timer_source);
-        let mut running = true;
+        let mut running = false;
 
         metronome.last_tick_time = timer_source();
         loop {
@@ -132,15 +133,18 @@ pub fn setup_metronome(
                     MetronomeCommand::Reset => metronome.reset(),
                     MetronomeCommand::IncreaseBpm(delta) => metronome.increase_bpm(delta),
                     MetronomeCommand::DecreaseBpm(delta) => metronome.decrease_bpm(delta),
-                    MetronomeCommand::Stop => {
+                    MetronomeCommand::Pause => {
                         running = false;
-                        break;
+                    }
+                    MetronomeCommand::Play => {
+                        running = true;
+                        metronome.last_tick_time = timer_source()
                     }
                 }
             }
 
             if !running {
-                break;
+                continue;
             }
 
             let tick_duration = metronome.get_tick_duration();

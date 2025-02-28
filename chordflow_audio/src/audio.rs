@@ -66,7 +66,8 @@ pub fn play_tick(synth: &mut Synth, tick_time: u64, buffer: &mut [f32]) {
 #[derive(Clone, PartialEq)]
 pub enum AudioCommand {
     PlayChord((Chord, u64, usize)),
-    TogglePause,
+    Play,
+    Pause,
 }
 
 pub fn setup_audio(soundfont_path: Option<PathBuf>) -> mpsc::Sender<AudioCommand> {
@@ -90,11 +91,14 @@ pub fn setup_audio(soundfont_path: Option<PathBuf>) -> mpsc::Sender<AudioCommand
                         sink.append(source);
                         sink.play();
                     }
-                    AudioCommand::TogglePause => {
+                    AudioCommand::Pause => {
+                        if !sink.is_paused() {
+                            sink.pause();
+                        }
+                    }
+                    AudioCommand::Play => {
                         if sink.is_paused() {
                             sink.play();
-                        } else {
-                            sink.pause();
                         }
                     }
                 }

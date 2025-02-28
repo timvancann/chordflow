@@ -14,7 +14,10 @@ use components::{
     metronome_settings::MetronomSettingsDisplay, mode_selection::ModeSelectionDisplay,
     play_controls::PlayControls, practice_state::PracticeStateDisplay,
 };
-use dioxus::prelude::*;
+use dioxus::{
+    desktop::{tao::platform::macos::WindowBuilderExtMacOS, Config, LogicalSize, WindowBuilder},
+    prelude::*,
+};
 use hooks::use_metronome::use_metronome;
 
 mod components;
@@ -25,7 +28,23 @@ const MAIN_CSS: Asset = asset!("/assets/styling/main.css");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 fn main() {
-    dioxus::launch(App);
+    let window_builder = WindowBuilder::new()
+        .with_transparent(true)
+        .with_decorations(true)
+        .with_has_shadow(true)
+        .with_focused(false)
+        .with_resizable(false)
+        .with_title("ChordFlow")
+        .with_inner_size(LogicalSize {
+            height: 775,
+            width: 1000,
+        })
+        .with_always_on_top(false)
+        .with_movable_by_window_background(true);
+
+    let config = Config::default().with_window(window_builder);
+
+    dioxus::LaunchBuilder::new().with_cfg(config).launch(App);
 }
 
 type MetronomeSignal = Signal<(Sender<MetronomeCommand>, Receiver<MetronomeEvent>)>;

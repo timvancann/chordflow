@@ -50,6 +50,10 @@ jobs:
       with: 
         targets: ${{ matrix.target }}
 
+    - name: Install Dioxus-CLI
+      shell: bash
+      run: cargo install dioxus-cli
+
     - name: Build
       uses: actions-rs/cargo@v1
       with:
@@ -62,6 +66,12 @@ jobs:
         use-cross: true
         command: build
         args: --release --target ${{ matrix.target }}
+
+    - name: Bundle
+      shell: bash
+      run: |
+        cd chordflow_desktop 
+        dx bundle --release
 
     - name: Build Archive
       shell: bash

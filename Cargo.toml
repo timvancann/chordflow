@@ -18,3 +18,8 @@ inherits = "dev"
 
 [profile.android-dev]
 inherits = "dev"
+
+
+[bundle]
+resources = ["assets/*"]
+

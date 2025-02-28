@@ -2,6 +2,9 @@
 
 # App (Project) Name
 name = "chordflow_desktop"
+default_platform = "desktop"
+
+asset_dir = "assets"
 
 [web.app]
 
@@ -22,3 +25,9 @@ script = []
 # Javascript code file
 # serve: [dev-server] only
 script = []
+
+[bundle]
+resources = ["assets/*"]
+identifier = "io.timnology"
+publisher = "Timnology"
+icon = ["icons/icon-512.png", "icons/Appicon.icns"]
