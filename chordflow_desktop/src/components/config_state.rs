@@ -1,13 +1,20 @@
 use chordflow_music_theory::{note::generate_all_roots, quality::Quality};
-use chordflow_shared::{practice_state::ConfigState, DiatonicOption};
-use dioxus::prelude::*;
+use chordflow_shared::{
+    practice_state::{ConfigState, PracticState},
+    progression::{Progression, ProgressionChord},
+    DiatonicOption,
+};
+use dioxus::{desktop::tao::window::ProgressState, logger::tracing, prelude::*};
 use strum::IntoEnumIterator;
 
-use crate::components::buttons::ToggleButton;
+use crate::components::buttons::{Button, ToggleButton};
 
 #[component]
 pub fn ConfigStateDisplay() -> Element {
     let mut config_state: Signal<ConfigState> = use_context();
+    let mut progression_input: Signal<String> = use_signal(|| "".to_string());
+    let mut progression_error: Signal<String> = use_signal(|| "".to_string());
+
     rsx! {
         div { class: "flex-col space-y-4",
             SingleConfigStateDisplay {
@@ -79,6 +86,47 @@ pub fn ConfigStateDisplay() -> Element {
                                 is_selected: config_state.read().random_selected_qualities.contains(&q),
                                 text: q.name(),
                             }
+                        }
+                    }
+                },
+            }
+            SingleConfigStateDisplay {
+                title: "Custom Progression",
+                children: rsx! {
+                    div { class: "flex space-x-2 text-sm  items-center",
+                        input {
+                            value: "{progression_input}",
+                            oninput: move |event| progression_input.set(event.value()),
+
+                        }
+                        Button {
+                            onclick: move |_| {
+                                let progression = ProgressionChord::from_string(
+                                    progression_input.read().to_string()
+                                );
+                                if let Ok(p) = progression {
+                                    let mut config_state: Signal<ConfigState> = use_context();
+                                    config_state.write().progression = Some(Progression { chords: p });
+                                    progression_error.set("".to_string());
+                                }
+                                else{
+                                    progression_error.set(format!("Failed to parse {}", progression_input.read()))
+                                }
+                            },
+
+                            text: "Parse",
+                        }
+                        span {
+                            {
+                                if let Some(p) = &config_state.read().progression {
+                                    p.to_string()
+                                } else {
+                                    "No valid progression".to_string()
+                                }
+                            }
+                        }
+                        span {
+                            "{progression_error}"
                         }
                     }
                 },
