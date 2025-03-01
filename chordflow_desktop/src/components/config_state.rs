@@ -95,28 +95,33 @@ pub fn ConfigStateDisplay() -> Element {
                 children: rsx! {
                     div { class: "flex space-x-2 text-sm  items-center",
                         input {
+                            class: "border-[1px] border-tokyoNight-comment shadow-lg text-tokyoNight-blue p-2 bg-tokyoNight-bg",
                             value: "{progression_input}",
                             oninput: move |event| progression_input.set(event.value()),
-
+                        
                         }
                         Button {
                             onclick: move |_| {
                                 let progression = ProgressionChord::from_string(
-                                    progression_input.read().to_string()
+                                    progression_input.read().to_string(),
                                 );
                                 if let Ok(p) = progression {
                                     let mut config_state: Signal<ConfigState> = use_context();
                                     config_state.write().progression = Some(Progression { chords: p });
                                     progression_error.set("".to_string());
-                                }
-                                else{
-                                    progression_error.set(format!("Failed to parse {}", progression_input.read()))
+                                } else {
+                                    progression_error
+                                        .set(format!("Failed to parse {}", progression_input.read()))
                                 }
                             },
-
+                    
                             text: "Parse",
                         }
                         span {
+                            class: match config_state.read().progression {
+                                Some(_) => "text-tokyoNight-magenta font-bold tracking-wide",
+                                None => "",
+                            },
                             {
                                 if let Some(p) = &config_state.read().progression {
                                     p.to_string()
@@ -125,9 +130,7 @@ pub fn ConfigStateDisplay() -> Element {
                                 }
                             }
                         }
-                        span {
-                            "{progression_error}"
-                        }
+                        span { class: "text-tokyoNight-magenta2", "{progression_error}" }
                     }
                 },
             }

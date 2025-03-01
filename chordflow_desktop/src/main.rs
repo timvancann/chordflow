@@ -36,10 +36,10 @@ fn main() {
         .with_resizable(false)
         .with_title("ChordFlow")
         .with_inner_size(LogicalSize {
-            height: 775,
+            height: 875,
             width: 1000,
         })
-        .with_always_on_top(false)
+        .with_always_on_top(true)
         .with_movable_by_window_background(true);
 
     let config = Config::default().with_window(window_builder);

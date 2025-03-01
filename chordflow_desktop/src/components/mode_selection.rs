@@ -1,4 +1,4 @@
-use chordflow_shared::ModeOption;
+use chordflow_shared::{practice_state::ConfigState, ModeOption};
 use dioxus::prelude::*;
 use strum::IntoEnumIterator;
 
@@ -7,6 +7,7 @@ use crate::components::{apply_selected_changes, buttons::ToggleButton};
 #[component]
 pub fn ModeSelectionDisplay() -> Element {
     let selected_mode: Signal<ModeOption> = use_context();
+    let config_state: Signal<ConfigState> = use_context();
     rsx! {
         div { class: "space-y-4 w-60",
             p { class: "text-tokyoNight-blue font-bold text-xl", "Practice Mode" }
@@ -16,6 +17,7 @@ pub fn ModeSelectionDisplay() -> Element {
                     ToggleButton {
                         text: mode.to_string(),
                         is_selected: mode == selected_mode(),
+                        is_disabled: {mode == ModeOption::Custom && config_state.read().progression.is_none()},
                         onclick: move |_| {
                             let mut selected_mode: Signal<ModeOption> = use_context();
                             selected_mode.set(mode);
