@@ -16,11 +16,11 @@ pub fn MetronomeDisplay() -> Element {
                     }
                     for tick in 0..m.ticks_per_bar {
                         if bar < m.current_bar || (bar == m.current_bar && tick < m.current_tick) {
-                            div { class: "w-8 h-8 rounded-full transition-colors bg-tokyoNight-blue" }
-                        } else if bar < m.current_bar || (bar == m.current_bar && tick == m.current_tick) {
-                            div { class: "w-8 h-8 rounded-full transition-colors bg-tokyoNight-orange" }
+                            div { class: "w-8 h-8 rounded-full transition-colors bg-tokyoNight-blue" } // completed tick
+                        } else if bar == m.current_bar && tick == m.current_tick {
+                            div { class: "w-8 h-8 rounded-full transition-colors bg-tokyoNight-orange" } // current tick
                         } else {
-                            div { class: "w-8 h-8 rounded-full transition-colors bg-tokyoNight-fg_dark" }
+                            div { class: "w-8 h-8 rounded-full transition-colors bg-tokyoNight-fg_dark" } // upcoming tick
                         }
                     }
                 }

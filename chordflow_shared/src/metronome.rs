@@ -15,6 +15,7 @@ pub struct Metronome {
     pub current_tick: usize,
     pub current_bar: usize,
     pub is_running: bool,
+    pub pause_time: Option<Instant>,
 }
 
 impl Metronome {
@@ -33,6 +34,7 @@ impl Metronome {
             num_bars,
             num_ticks: num_beats,
             is_running: false,
+            pause_time: None,
         }
     }
 
@@ -123,7 +125,7 @@ pub fn setup_metronome(
 
     thread::spawn(move || {
         let mut metronome = Metronome::new(bpm, num_bars, num_beats, timer_source);
-        let mut running = false;
+        let mut running = true;
 
         metronome.last_tick_time = timer_source();
         loop {
@@ -134,11 +136,18 @@ pub fn setup_metronome(
                     MetronomeCommand::IncreaseBpm(delta) => metronome.increase_bpm(delta),
                     MetronomeCommand::DecreaseBpm(delta) => metronome.decrease_bpm(delta),
                     MetronomeCommand::Pause => {
+                        if !running {
+                            continue;
+                        }
                         running = false;
+                        metronome.pause_time = Some((timer_source)())
                     }
                     MetronomeCommand::Play => {
+                        if let Some(paused_at) = metronome.pause_time.take() {
+                            let pause_duration = (timer_source)().duration_since(paused_at);
+                            metronome.last_tick_time += pause_duration; // Adjust for pause duration
+                        }
                         running = true;
-                        metronome.last_tick_time = timer_source()
                     }
                 }
             }

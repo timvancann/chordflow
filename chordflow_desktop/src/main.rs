@@ -1,18 +1,23 @@
 use std::{
+    fmt::Display,
     sync::mpsc::{Receiver, Sender},
     time::Instant,
 };
 
-use chordflow_audio::audio::setup_audio;
+use chordflow_audio::audio::{setup_audio, AudioCommand};
 use chordflow_shared::{
-    metronome::{setup_metronome, MetronomeCommand, MetronomeEvent},
+    metronome::{calculate_duration_per_bar, setup_metronome, MetronomeCommand, MetronomeEvent},
     practice_state::{ConfigState, PracticState},
     ModeOption,
 };
 use components::{
-    config_state::ConfigStateDisplay, header::Header, metronome::MetronomeDisplay,
-    metronome_settings::MetronomSettingsDisplay, mode_selection::ModeSelectionDisplay,
-    play_controls::PlayControls, practice_state::PracticeStateDisplay,
+    config_state::ConfigStateDisplay,
+    header::Header,
+    metronome::MetronomeDisplay,
+    metronome_settings::MetronomSettingsDisplay,
+    mode_selection::ModeSelectionDisplay,
+    play_controls::{restart, PlayControls},
+    practice_state::PracticeStateDisplay,
 };
 use dioxus::{
     desktop::{tao::platform::macos::WindowBuilderExtMacOS, Config, LogicalSize, WindowBuilder},
@@ -58,6 +63,16 @@ struct MetronomeState {
     current_tick: usize,
 }
 
+impl Display for MetronomeState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "BPM: {}, Bar: {}/{} Tick: {}/{}",
+            self.bpm, self.current_bar, self.bars_per_chord, self.current_tick, self.ticks_per_bar
+        )
+    }
+}
+
 #[component]
 fn App() -> Element {
     let audio_tx = use_signal(|| setup_audio(None));
@@ -81,6 +96,15 @@ fn App() -> Element {
     use_context_provider(|| metronome_state);
 
     use_metronome(metronome, metronome_state, practice_state, audio_tx);
+
+    let mut initial_setup = use_signal(|| true);
+
+    use_effect(move || {
+        if *initial_setup.read() {
+            restart();
+            initial_setup.set(false);
+        }
+    });
 
     rsx! {
         // Global app resources

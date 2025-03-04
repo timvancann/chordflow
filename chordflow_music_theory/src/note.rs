@@ -56,7 +56,7 @@ impl NoteLetter {
     }
 
     pub fn from_string(s: &str) -> NoteLetter {
-        match s {
+        match s.to_uppercase().as_str() {
             "C" => NoteLetter::C,
             "D" => NoteLetter::D,
             "E" => NoteLetter::E,

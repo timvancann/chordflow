@@ -78,6 +78,7 @@ pub fn setup_audio(soundfont_path: Option<PathBuf>) -> mpsc::Sender<AudioCommand
         let (_stream, stream_handle) =
             OutputStream::try_default().expect("Failed to create audio output stream");
         let sink = Sink::try_new(&stream_handle).expect("Failed to create Rodio sink");
+        sink.play();
 
         loop {
             while let Ok(command) = rx.try_recv() {

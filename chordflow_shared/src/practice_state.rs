@@ -39,6 +39,7 @@ pub struct PracticState {
     pub next_chord: Chord,
     pub mode: Mode,
     pub next_scale_interval: Interval,
+    pub current_progression_chord_idx: usize,
     pub next_progression_chord_idx: usize,
 }
 
@@ -54,6 +55,10 @@ impl PracticState {
 
     pub fn next_chord(&mut self) {
         self.current_chord = self.next_chord;
+        if let Mode::Custom(Some(p)) = &self.mode {
+            self.current_progression_chord_idx =
+                (self.current_progression_chord_idx + 1) % p.chords.len();
+        }
         self.next_chord = self
             .generate_next_chord(self.current_chord, self.mode.clone())
             .unwrap();
@@ -77,7 +82,7 @@ impl PracticState {
             }
             Mode::Custom(Some(progression)) => {
                 self.next_progression_chord_idx =
-                    (self.next_progression_chord_idx + 1) % progression.chords.len();
+                    (self.current_progression_chord_idx + 1) % progression.chords.len();
                 Some(progression.chords[self.next_progression_chord_idx].chord)
             }
             Mode::Custom(None) => None,
@@ -163,6 +168,7 @@ impl Default for PracticState {
             next_chord,
             next_scale_interval: Interval::Unison,
             next_progression_chord_idx: 0,
+            current_progression_chord_idx: 0,
         }
     }
 }

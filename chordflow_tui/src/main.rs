@@ -6,6 +6,7 @@ use chordflow_shared::practice_state::ConfigState;
 use log::LevelFilter;
 use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root};
+
 use log4rs::encode::pattern::PatternEncoder;
 use std::io;
 use std::sync::mpsc::{Receiver, Sender};

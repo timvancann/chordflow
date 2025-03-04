@@ -1,10 +1,10 @@
 use chordflow_music_theory::{note::generate_all_roots, quality::Quality};
 use chordflow_shared::{
-    practice_state::{ConfigState, PracticState},
+    practice_state::ConfigState,
     progression::{Progression, ProgressionChord},
     DiatonicOption,
 };
-use dioxus::{desktop::tao::window::ProgressState, logger::tracing, prelude::*};
+use dioxus::prelude::*;
 use strum::IntoEnumIterator;
 
 use crate::components::buttons::{Button, ToggleButton};
@@ -98,7 +98,6 @@ pub fn ConfigStateDisplay() -> Element {
                             class: "border-[1px] border-tokyoNight-comment shadow-lg text-tokyoNight-blue p-2 bg-tokyoNight-bg",
                             value: "{progression_input}",
                             oninput: move |event| progression_input.set(event.value()),
-                        
                         }
                         Button {
                             onclick: move |_| {
@@ -114,7 +113,6 @@ pub fn ConfigStateDisplay() -> Element {
                                         .set(format!("Failed to parse {}", progression_input.read()))
                                 }
                             },
-                    
                             text: "Parse",
                         }
                         span {

@@ -34,7 +34,7 @@ pub fn apply_selected_changes() {
     );
     if let Mode::Custom(Some(p)) = practice_state().mode {
         metronome_state.write().bars_per_chord =
-            p.chords[practice_state().next_progression_chord_idx].bars;
+            p.chords[practice_state().current_progression_chord_idx].bars;
     }
     let _ = metronome.read().0.send(MetronomeCommand::SetBars(
         metronome_state.read().bars_per_chord,

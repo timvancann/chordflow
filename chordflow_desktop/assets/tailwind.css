@@ -670,9 +670,50 @@ video {
   border-width: 1px;
 }
 
+.border-x-2 {
+  border-left-width: 2px;
+  border-right-width: 2px;
+}
+
+.border-x {
+  border-left-width: 1px;
+  border-right-width: 1px;
+}
+
+.border-x-\[1px\] {
+  border-left-width: 1px;
+  border-right-width: 1px;
+}
+
+.border-b-2 {
+  border-bottom-width: 2px;
+}
+
+.border-b-\[1px\] {
+  border-bottom-width: 1px;
+}
+
+.border-l-\[1px\] {
+  border-left-width: 1px;
+}
+
+.border-r-\[1px\] {
+  border-right-width: 1px;
+}
+
 .border-tokyoNight-comment {
   --tw-border-opacity: 1;
   border-color: rgb(86 95 137 / var(--tw-border-opacity, 1));
+}
+
+.border-tokyoNight-blue {
+  --tw-border-opacity: 1;
+  border-color: rgb(122 162 247 / var(--tw-border-opacity, 1));
+}
+
+.border-tokyoNight-fg_gutter {
+  --tw-border-opacity: 1;
+  border-color: rgb(59 66 97 / var(--tw-border-opacity, 1));
 }
 
 .bg-tokyoNight-bg {
@@ -699,6 +740,11 @@ video {
   background-color: rgb(255 158 100 / var(--tw-bg-opacity, 1));
 }
 
+.bg-tokyoNight-blue0 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(61 89 161 / var(--tw-bg-opacity, 1));
+}
+
 .p-2 {
   padding: 0.5rem;
 }
@@ -709,6 +755,16 @@ video {
 
 .p-4 {
   padding: 1rem;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 .align-middle {
@@ -798,6 +854,11 @@ video {
 .text-tokyoNight-orange {
   --tw-text-opacity: 1;
   color: rgb(255 158 100 / var(--tw-text-opacity, 1));
+}
+
+.text-tokyoNight-blue2 {
+  --tw-text-opacity: 1;
+  color: rgb(13 185 215 / var(--tw-text-opacity, 1));
 }
 
 .shadow-lg {
