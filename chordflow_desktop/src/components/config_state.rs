@@ -93,6 +93,16 @@ pub fn ConfigStateDisplay() -> Element {
             SingleConfigStateDisplay {
                 title: "Custom Progression",
                 children: rsx! {
+                    div {
+                        span { "Format: " }
+                        span { class: "text-tokyoNight-magenta", "[bars]" }
+                        span { class: "text-tokyoNight-yellow", "[note]" }
+                        span { class: "text-tokyoNight-teal", "[quality]" }
+                        span { " | Example: " }
+                        span { class: "text-tokyoNight-magenta", "3C " }
+                        span { class: "text-tokyoNight-yellow", "2Bm " }
+                        span { class: "text-tokyoNight-teal", "1F#+ " }
+                    }
                     div { class: "flex space-x-2 text-sm  items-center",
                         input {
                             class: "border-[1px] border-tokyoNight-comment shadow-lg text-tokyoNight-blue p-2 bg-tokyoNight-bg",

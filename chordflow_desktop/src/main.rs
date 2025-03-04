@@ -4,9 +4,9 @@ use std::{
     time::Instant,
 };
 
-use chordflow_audio::audio::{setup_audio, AudioCommand};
+use chordflow_audio::audio::setup_audio;
 use chordflow_shared::{
-    metronome::{calculate_duration_per_bar, setup_metronome, MetronomeCommand, MetronomeEvent},
+    metronome::{setup_metronome, MetronomeCommand, MetronomeEvent},
     practice_state::{ConfigState, PracticState},
     ModeOption,
 };
@@ -37,14 +37,14 @@ fn main() {
         .with_transparent(true)
         .with_decorations(true)
         .with_has_shadow(true)
-        .with_focused(false)
-        .with_resizable(false)
+        .with_focused(true)
+        .with_resizable(true)
         .with_title("ChordFlow")
         .with_inner_size(LogicalSize {
-            height: 875,
+            height: 910,
             width: 1000,
         })
-        .with_always_on_top(true)
+        .with_always_on_top(false)
         .with_movable_by_window_background(true);
 
     let config = Config::default().with_window(window_builder);

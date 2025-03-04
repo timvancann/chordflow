@@ -30,8 +30,11 @@ impl Quality {
         match quality {
             "" => Quality::Major,
             "m" => Quality::Minor,
+            "-" => Quality::Minor,
             "o" => Quality::Diminished,
+            "dim" => Quality::Diminished,
             "+" => Quality::Augmented,
+            "aug" => Quality::Augmented,
             "7" => Quality::Dominant,
             "maj7" => Quality::MajorSeventh,
             "m7" => Quality::MajorSeventh,

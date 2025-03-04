@@ -44,9 +44,10 @@ impl ProgressionChord {
     /// Examples:
     /// 3C 2Bm 1F#aug
     pub fn from_string(str: String) -> Result<Vec<ProgressionChord>> {
-        let re =
-            Regex::new(r"(?<n>\d)(?<l>[ABCDEFGabcdefgh])(?<a>[#b])?(?<q>M|m|aug|dim|maj7|7|m7b5)?")
-                .unwrap();
+        let re = Regex::new(
+            r"(?<n>\d)(?<l>[ABCDEFGabcdefgh])(?<a>[#b])?(?<q>M|m|\-|aug|\+|dim|o|maj7|7|m7b5)?",
+        )
+        .unwrap();
 
         let mut results = vec![];
         for res in re.captures_iter(&str) {

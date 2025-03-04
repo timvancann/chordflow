@@ -1,4 +1,4 @@
-use chordflow_shared::practice_state::PracticState;
+use chordflow_shared::practice_state::{self, PracticState};
 
 use dioxus::prelude::*;
 
@@ -8,7 +8,7 @@ pub fn PracticeStateDisplay() -> Element {
     let chord = practice_state.read().current_chord;
     let next_chord = practice_state.read().next_chord;
     rsx! {
-        div { class: "flex flex-col items-center justify-center w-full space-y-1 mt-8",
+        div { class: "flex flex-col items-center justify-center w-full space-y-2 mt-8",
             div { class: "flex text-8xl text-tokyoNight-magenta",
                 div { class: "font-semibold", {chord.root.to_string()} }
                 div { class: "text-5xl", {chord.quality.to_string()} }
