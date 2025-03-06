@@ -36,7 +36,6 @@ fn main() {
     let window_builder = WindowBuilder::new()
         .with_transparent(true)
         .with_decorations(true)
-        .with_has_shadow(true)
         .with_focused(true)
         .with_resizable(true)
         .with_title("ChordFlow")
@@ -44,8 +43,7 @@ fn main() {
             height: 910,
             width: 1000,
         })
-        .with_always_on_top(false)
-        .with_movable_by_window_background(true);
+        .with_always_on_top(false);
 
     let config = Config::default().with_window(window_builder);
 

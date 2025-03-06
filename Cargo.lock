@@ -584,7 +584,7 @@ dependencies = [
 
 [[package]]
 name = "chordflow_desktop"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chordflow_audio",
  "chordflow_music_theory",
@@ -625,7 +625,7 @@ dependencies = [
 
 [[package]]
 name = "chordflow_tui"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "chordflow_audio",
