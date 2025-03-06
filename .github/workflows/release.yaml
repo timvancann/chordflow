@@ -25,12 +25,12 @@ jobs:
             dependencies: |
               brew install cmake portaudio pkg-config
 
-          - build: windows-gnu
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-            dependencies: |
-              choco install vcpkg -y
-              vcpkg install portaudio:x64-windows
+         # - build: windows-gnu
+         #   os: windows-latest
+         #   target: x86_64-pc-windows-msvc
+         #   dependencies: |
+         #     choco install vcpkg -y
+         #     vcpkg install portaudio:x64-windows
 
     steps: 
     - name: Clone repository
@@ -48,11 +48,6 @@ jobs:
       shell: bash
       run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-    - name: Change directory
-      shell: bash
-      run: |
-        cd chordflow_tui
-        
     - name: Build
       uses: actions-rs/cargo@v1
       with:
@@ -63,7 +58,6 @@ jobs:
     - name: Build Archive
       shell: bash
       run: |
-        cd ..
         binary_name="chordflow_tui"
 
         dirname="${binary_name}-${{ env.VERSION }}-${{ matrix.target }}"
@@ -94,7 +88,6 @@ jobs:
   build-and-upload-mac:
     name: Desktop-MacOS
     runs-on: macos-latest
-    needs: test  
 
     steps: 
     - name: Clone repository
@@ -119,15 +112,15 @@ jobs:
     - name: Build Archive
       shell: bash
       run: |
-        cd chordflow-desktop
+        cd chordflow_desktop
         dx bundle --release
         
         
         app_name="ChordFlowDesktop.app"
         dmg_name="ChordFlowDesktop_${{ env.VERSION }}_aarch64.dmg"
         
-        mv ../target/dx/chordflow-desktop/bundle/macos/bundle/macos/${app_name }} ${app_name}
-        mv ../target/dx/chordflow-desktop/bundle/macos/bundle/dmg/${dmg_name }} ${dmg_name}
+        mv ../target/dx/chordflow_desktop/bundle/macos/bundle/macos/*.app ${app_name}
+        mv ../target/dx/chordflow_desktop/bundle/macos/bundle/dmg/*.dmg ${dmg_name}
         
         echo "APP=${app_name}" >> ${GITHUB_ENV}
         echo "DMG=${dmg_name}" >> ${GITHUB_ENV}

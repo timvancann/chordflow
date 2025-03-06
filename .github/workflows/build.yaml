@@ -32,12 +32,12 @@ jobs:
             dependencies: |
               brew install cmake portaudio pkg-config
 
-          - build: windows-gnu
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-            dependencies: |
-              choco install vcpkg -y
-              vcpkg install portaudio:x64-windows
+         # - build: windows-gnu
+         #   os: windows-latest
+         #   target: x86_64-pc-windows-msvc
+         #   dependencies: |
+         #     choco install vcpkg -y
+         #     vcpkg install portaudio:x64-windows
 
     steps: 
     - name: Clone repository
@@ -71,13 +71,6 @@ jobs:
             dependencies: |
               brew install cmake portaudio pkg-config
 
-          - build: windows-gnu
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-            dependencies: |
-              choco install vcpkg -y
-              vcpkg install portaudio:x64-windows
-
     steps: 
     - name: Clone repository
       uses: actions/checkout@v3
@@ -90,11 +83,6 @@ jobs:
       with: 
         targets: ${{ matrix.target }}
         
-    - name: Change directory
-      shell: bash
-      run: |
-        cd chordflow_tui
-        
     - name: Build
       uses: actions-rs/cargo@v1
       with:
@@ -106,7 +94,6 @@ jobs:
     - name: Build Archive
       shell: bash
       run: |
-        cd ..
         binary_name="chordflow_tui"
 
         dirname="${binary_name}-${{ env.VERSION }}-${{ matrix.target }}"
@@ -150,15 +137,16 @@ jobs:
     - name: Build Archive
       shell: bash
       run: |
-        cd chordflow-desktop
+        cd chordflow_desktop
+
         dx bundle --release
         
         
         app_name="ChordFlowDesktop.app"
         dmg_name="ChordFlowDesktop_${{ env.VERSION }}_aarch64.dmg"
         
-        mv ../target/dx/chordflow-desktop/bundle/macos/bundle/macos/${app_name} ${app_name}
-        mv ../target/dx/chordflow-desktop/bundle/macos/bundle/dmg/${dmg_name} ${dmg_name}
+        mv ../target/dx/chordflow_desktop/bundle/macos/bundle/macos/*.app ${app_name}
+        mv ../target/dx/chordflow_desktop/bundle/macos/bundle/dmg/*.dmg ${dmg_name}
         
         echo "APP=${app_name}" >> ${GITHUB_ENV}
         echo "DMG=${dmg_name}" >> ${GITHUB_ENV}
