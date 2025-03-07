@@ -1,55 +1,25 @@
 name: Build
 
-on:
-  push:
-    branches: 
-      - '*'
-  pull_request:
-    branches: [ "main" ]
-
+on: push
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   test:
-    name: Build
+    name: Test
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        include:
-          #          - build: linux
-          #            os: ubuntu-latest
-          #            target: x86_64-unknown-linux-musl
-          #            dependencies: |
-          #              sudo apt-get update && sudo apt-get install -y --reinstall libasound2-dev pkg-config
-          #              echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig" >> $GITHUB_ENV
-
-          - build: macos
-            os: macos-latest
-            target: x86_64-apple-darwin
-            dependencies: |
-              brew install cmake portaudio pkg-config
-
-         # - build: windows-gnu
-         #   os: windows-latest
-         #   target: x86_64-pc-windows-msvc
-         #   dependencies: |
-         #     choco install vcpkg -y
-         #     vcpkg install portaudio:x64-windows
+        os: [macos-latest]
 
     steps: 
     - name: Clone repository
       uses: actions/checkout@v3
 
     - name: Install dependencies
-      run: ${{ matrix.dependencies }}
-
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
-      with: 
-        targets: ${{ matrix.target }}
+      run: brew install cmake portaudio pkg-config
 
     - name: Build
       uses: actions-rs/cargo@v1
@@ -61,22 +31,21 @@ jobs:
     needs: test
     name: TUI
     runs-on: ${{ matrix.os }}
-    
+
     strategy:
       matrix:
-        include:
-          - build: macos
-            os: macos-latest
-            target: x86_64-apple-darwin
-            dependencies: |
-              brew install cmake portaudio pkg-config
+        include: 
+        - os: macos-latest
+          target: x86_64-apple-darwin
+        - os: macos-latest
+          target: aarch64-apple-darwin
 
     steps: 
     - name: Clone repository
       uses: actions/checkout@v3
 
     - name: Install dependencies
-      run: ${{ matrix.dependencies }}
+      run: brew install cmake portaudio pkg-config
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -94,29 +63,29 @@ jobs:
     - name: Build Archive
       shell: bash
       run: |
+        mkdir artifacts
         binary_name="chordflow_tui"
+        app_name="${binary_name}-${{ env.VERSION }}-${{ matrix.target }}"
+        tar -czf artifacts/${app_name} target/${{ matrix.target }}/release/${binary_name} 
 
-        dirname="${binary_name}-${{ env.VERSION }}-${{ matrix.target }}"
-        mkdir ${dirname}
-
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          mv target/${{ matrix.target }}/release/${binary_name}.exe ${dirname}
-        else
-          mv target/${{ matrix.target }}/release/${binary_name} ${dirname}
-        fi
-        
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          7z a "${dirname}.zip" ${dirname}
-          echo "ASSET=${dirname}.zip" >> ${GITHUB_ENV}
-        else
-          tar -czf "${dirname}.tar.gz" ${dirname}
-          echo "ASSET=${dirname}.tar.gz" >> ${GITHUB_ENV}
-        fi
+    - name: Upload Release Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binaries-tui-${{ matrix.target }}
+        path: artifacts/
 
   desktop:
     name: Desktop-MacOS
-    runs-on: macos-latest
     needs: test  
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include: 
+        - os: macos-latest
+          target: x86_64-apple-darwin
+        - os: macos-latest
+          target: aarch64-apple-darwin
 
     steps: 
     - name: Clone repository
@@ -128,7 +97,7 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with: 
-        targets:  x86_64-apple-darwin
+        targets: ${{ matrix.target }}
 
     - name: Install Dioxus-CLI
       shell: bash
@@ -136,17 +105,68 @@ jobs:
 
     - name: Build Archive
       shell: bash
+      working-directory: ./chordflow_desktop
       run: |
-        cd chordflow_desktop
-
+        mkdir ../artifacts
         dx bundle --release
+        current_version=$(cargo pkgid | cut -d "#" -f2)
+        dmg_name="ChordFlow-${current_version}-${{ matrix.target }}.dmg"
+        mv ../target/dx/chordflow_desktop/bundle/macos/bundle/dmg/ChordflowDesktop_*.dmg ../artifacts/${dmg_name}
+
+    - name: Upload Release Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binaries-desktop-macos-${{ matrix.target }}
+        path: artifacts/
+
         
-        
-        app_name="ChordFlowDesktop.app"
-        dmg_name="ChordFlowDesktop_${{ env.VERSION }}_aarch64.dmg"
-        
-        mv ../target/dx/chordflow_desktop/bundle/macos/bundle/macos/*.app ${app_name}
-        mv ../target/dx/chordflow_desktop/bundle/macos/bundle/dmg/*.dmg ${dmg_name}
-        
-        echo "APP=${app_name}" >> ${GITHUB_ENV}
-        echo "DMG=${dmg_name}" >> ${GITHUB_ENV}
+  release:
+    needs: [desktop, tui]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+
+    steps:
+      - name: Get Version
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Download macOS Intel TUI Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-tui-x86_64-apple-darwin
+          path: artifacts/
+
+      - name: Download macOS Arch TUI Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-tui-aarch64-apple-darwin
+          path: artifacts/
+
+      - name: Download macOS Intel Desktop Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-desktop-macos-x86_64-apple-darwin
+          path: artifacts/
+
+      - name: Download macOS Arch Desktop Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-desktop-macos-aarch64-apple-darwin
+          path: artifacts/
+
+      - name: Show artifacts
+        shell: bash
+        run: ls -la artifacts
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/chordflow_tui-${{ env.VERSION }}-x86_64-apple-darwin.tar.gz
+            artifacts/chordflow_tui-${{ env.VERSION }}-aarch64-apple-darwin.tar.gz
+            artifacts/ChordFlow-${{ env.VERSION }}-x86_64-apple-darwin.dmg
+            artifacts/ChordFlow-${{ env.VERSION }}-aarch64-apple-darwin.dmg
