@@ -65,7 +65,8 @@ jobs:
       run: |
         mkdir artifacts
         binary_name="chordflow_tui"
-        app_name="${binary_name}-${{ env.VERSION }}-${{ matrix.target }}"
+        current_version=$(cargo pkgid | cut -d "#" -f2)
+        app_name="${binary_name}-${current_version}-${{ matrix.target }}"
         tar -czf artifacts/${app_name}.tar.gz target/${{ matrix.target }}/release/${binary_name} 
 
     - name: Upload Release Artifacts
