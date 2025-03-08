@@ -1,6 +1,6 @@
 [package]
 name = "chordflow_desktop"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["Tim van Cann <timvancann@gmail.com>"]
 edition = "2021"
 
