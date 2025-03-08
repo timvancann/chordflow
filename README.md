@@ -1,6 +1,7 @@
 # 🎸 ChordFlow
 
-ChordFlow is a TUI (Terminal User Interface) tool designed to help guitarists/musicians practice improvisation and master the guitar neck by providing dynamic chord progressions with a built-in metronome.
+ChordFlow is a GUI Desktop app and TUI (Terminal User Interface) tool designed to help guitarists/musicians 
+practice improvisation and master the guitar neck by providing dynamic chord progressions with a built-in metronome.
 
 ## ✨ Features
 
@@ -11,10 +12,9 @@ ChordFlow is a TUI (Terminal User Interface) tool designed to help guitarists/mu
 - ⚙️  Customizability – Users can supply their own SoundFont for metronome ticks and chord sounds.
 - 🖥️ Cross-Platform – Works on macOS, and Windows.
 
-## 🎥 Video Demo
+## 🎥 Video Demo TUI
 
 [![ChordFlow](https://img.youtube.com/vi/Oc7po6uNBfQ/0.jpg)](https://www.youtube.com/watch?v=Oc7po6uNBfQ)
-
 
 ## 📦 Installation
 
@@ -28,7 +28,7 @@ ChordFlow is a TUI (Terminal User Interface) tool designed to help guitarists/mu
 
 2. Grab the latest [release](https://github.com/timvancann/chordflow/releases)
 
-## 🚀 Usage 
+## 🚀 Usage
 
 ### TUI
 

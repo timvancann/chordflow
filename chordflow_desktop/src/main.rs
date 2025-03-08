@@ -39,6 +39,8 @@ fn main() {
         .with_focused(true)
         .with_resizable(true)
         .with_title("ChordFlow")
+        .with_has_shadow(true)
+        .with_movable_by_window_background(true)
         .with_inner_size(LogicalSize {
             height: 910,
             width: 1000,
