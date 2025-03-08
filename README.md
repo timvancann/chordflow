@@ -1,6 +1,6 @@
 # 🎸 ChordFlow
 
-ChordFlow is a GUI Desktop app and TUI (Terminal User Interface) tool designed to help guitarists/musicians 
+ChordFlow is a GUI Desktop app and TUI (Terminal User Interface) tool designed to help guitarists/musicians
 practice improvisation and master the guitar neck by providing dynamic chord progressions with a built-in metronome.
 
 ## ✨ Features
@@ -9,22 +9,26 @@ practice improvisation and master the guitar neck by providing dynamic chord pro
 - 🔄 Random Chord Generation – Generate new chords every bar to improve improvisation skills.
 - 📊 Visual Progress Bar – Displays the current beat and bar progress.
 - 🎼 Real-Time Chord Display – Shows the current and upcoming chord.
-- ⚙️  Customizability – Users can supply their own SoundFont for metronome ticks and chord sounds.
+- ⚙️ Customizability – Users can supply their own SoundFont for metronome ticks and chord sounds.
 - 🖥️ Cross-Platform – Works on macOS, and Windows.
 
 ## 🎥 Video Demo TUI
 
 [![ChordFlow](https://img.youtube.com/vi/Oc7po6uNBfQ/0.jpg)](https://www.youtube.com/watch?v=Oc7po6uNBfQ)
 
+## 🎥 Video Demo Desktop GUI
+
+[![ChordFlow](https://img.youtube.com/vi/X5V7tlbOBbY/0.jpg)](https://www.youtube.com/watch?v=X5V7tlbOBbY)
+
 ## 📦 Installation
 
 1. Build from Source
 
-  ```bash
-  git clone https://github.com/timvancann/chordflow
-  cd chordflow
-  cargo build --release
-  ```
+```bash
+git clone https://github.com/timvancann/chordflow
+cd chordflow
+cargo build --release
+```
 
 2. Grab the latest [release](https://github.com/timvancann/chordflow/releases)
 
@@ -43,7 +47,7 @@ Options:
   -t, --ticks-per-bar <INT>    Number of beats per bar [default: 4]
   -s, --soundfont <SOUNDFONT>  Soundfont file path
   -h, --help                   Print help
- ```
+```
 
 ### GUI
 
