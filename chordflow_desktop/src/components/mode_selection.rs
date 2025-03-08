@@ -6,7 +6,7 @@ use crate::components::{apply_selected_changes, buttons::ToggleButton};
 
 #[component]
 pub fn ModeSelectionDisplay() -> Element {
-    let selected_mode: Signal<ModeOption> = use_context();
+    let mut selected_mode: Signal<ModeOption> = use_context();
     let config_state: Signal<ConfigState> = use_context();
     rsx! {
         div { class: "space-y-4 w-60",
@@ -17,9 +17,8 @@ pub fn ModeSelectionDisplay() -> Element {
                     ToggleButton {
                         text: mode.to_string(),
                         is_selected: mode == selected_mode(),
-                        is_disabled: {mode == ModeOption::Custom && config_state.read().progression.is_none()},
+                        is_disabled: mode == ModeOption::Custom && config_state.read().progression.is_none(),
                         onclick: move |_| {
-                            let mut selected_mode: Signal<ModeOption> = use_context();
                             selected_mode.set(mode);
                             apply_selected_changes();
                         },

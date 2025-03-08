@@ -14,6 +14,7 @@ pub fn ConfigStateDisplay() -> Element {
     let mut config_state: Signal<ConfigState> = use_context();
     let mut progression_input: Signal<String> = use_signal(|| "".to_string());
     let mut progression_error: Signal<String> = use_signal(|| "".to_string());
+    let mut config_state: Signal<ConfigState> = use_context();
 
     rsx! {
         div { class: "flex-col space-y-4",
@@ -24,8 +25,7 @@ pub fn ConfigStateDisplay() -> Element {
                         for q in Quality::iter() {
                             ToggleButton {
                                 onclick: move |_| {
-                                    let mut c: Signal<ConfigState> = use_context();
-                                    c.write().fourths_selected_quality = q;
+                                    config_state.write().fourths_selected_quality = q;
                                 },
                                 is_selected: q == config_state.read().fourths_selected_quality,
                                 text: q.name(),
@@ -42,8 +42,7 @@ pub fn ConfigStateDisplay() -> Element {
                             for q in DiatonicOption::iter() {
                                 ToggleButton {
                                     onclick: move |_| {
-                                        let mut c: Signal<ConfigState> = use_context();
-                                        c.write().diatonic_option = q;
+                                        config_state.write().diatonic_option = q;
                                     },
                                     is_selected: q == config_state.read().diatonic_option,
                                     text: q.to_string(),
@@ -53,10 +52,9 @@ pub fn ConfigStateDisplay() -> Element {
                         span { " | " }
                         select {
                             class: "select h-9",
-                            onchange: |e| {
+                            onchange: move |e| {
                                 let index = e.value().parse::<usize>().unwrap();
-                                let mut c: Signal<ConfigState> = use_context();
-                                c.write().diatonic_root = generate_all_roots()[index];
+                                config_state.write().diatonic_root = generate_all_roots()[index];
                             },
                             for (i , root) in generate_all_roots().into_iter().enumerate() {
                                 option {
@@ -115,7 +113,6 @@ pub fn ConfigStateDisplay() -> Element {
                                     progression_input.read().to_string(),
                                 );
                                 if let Ok(p) = progression {
-                                    let mut config_state: Signal<ConfigState> = use_context();
                                     config_state.write().progression = Some(Progression { chords: p });
                                     progression_error.set("".to_string());
                                 } else {

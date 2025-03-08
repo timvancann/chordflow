@@ -1,7 +1,11 @@
 # 🎸 ChordFlow
 
+![Logo](icons/web/icon-192.png)
+
 ChordFlow is a GUI Desktop app and TUI (Terminal User Interface) tool designed to help guitarists/musicians
-practice improvisation and master the guitar neck by providing dynamic chord progressions with a built-in metronome.
+practice improvisation and master the guitar neck by providing dynamic chord progressions with a built-in metronome.  
+
+Grab the latest [release](https://github.com/timvancann/chordflow/releases)
 
 ## ✨ Features
 
@@ -10,15 +14,8 @@ practice improvisation and master the guitar neck by providing dynamic chord pro
 - 📊 Visual Progress Bar – Displays the current beat and bar progress.
 - 🎼 Real-Time Chord Display – Shows the current and upcoming chord.
 - ⚙️ Customizability – Users can supply their own SoundFont for metronome ticks and chord sounds.
-- 🖥️ Cross-Platform – Works on macOS, and Windows.
-
-## 🎥 Video Demo TUI
-
-[![ChordFlow](https://img.youtube.com/vi/Oc7po6uNBfQ/0.jpg)](https://www.youtube.com/watch?v=Oc7po6uNBfQ)
-
-## 🎥 Video Demo Desktop GUI
-
-[![ChordFlow](https://img.youtube.com/vi/X5V7tlbOBbY/0.jpg)](https://www.youtube.com/watch?v=X5V7tlbOBbY)
+- 🎥 [TUI demo](https://www.youtube.com/watch?v=Oc7po6uNBfQ)
+- 🎥 [Desktop GUI demo](https://www.youtube.com/watch?v=X5V7tlbOBbY)
 
 ## 📦 Installation
 
@@ -62,9 +59,9 @@ dx serve
 
 - [ ] Fix Linux release
 - [ ] Add more scales (e.g. melodic minor)
-- [ ] Better feedback and UI on custom progressions
+- [x] Better feedback and UI on custom progressions
 - [ ] Allow dynamically update the number of beats per bar
-- [ ] Use [Dioxux](https://dioxuslabs.com/) to create a GUI native app
+- [x] Use [Dioxux](https://dioxuslabs.com/) to create a GUI native app
 
 ## 🤝 Contributing
 

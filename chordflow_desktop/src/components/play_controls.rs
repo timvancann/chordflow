@@ -41,6 +41,8 @@ pub fn restart() {
 
 #[component]
 pub fn PlayControls() -> Element {
+    let metronome: MetronomeSignal = use_context();
+    let tx_audio: Signal<Sender<AudioCommand>> = use_context();
     rsx! {
         div { class: "flex justify-center items-center space-x-4",
             Button {
@@ -60,9 +62,7 @@ pub fn PlayControls() -> Element {
                 text: "Apply Changes",
             }
             Button {
-                onclick: |_| {
-                    let metronome: MetronomeSignal = use_context();
-                    let tx_audio: Signal<Sender<AudioCommand>> = use_context();
+                onclick: move |_| {
                     let _ = tx_audio.read().send(AudioCommand::Play);
                     let _ = metronome.read().0.send(MetronomeCommand::Play);
                 },
@@ -71,9 +71,7 @@ pub fn PlayControls() -> Element {
                 },
             }
             Button {
-                onclick: |_| {
-                    let metronome: MetronomeSignal = use_context();
-                    let tx_audio: Signal<Sender<AudioCommand>> = use_context();
+                onclick: move |_| {
                     let _ = metronome.read().0.send(MetronomeCommand::Pause);
                     let _ = tx_audio.read().send(AudioCommand::Pause);
                 },
