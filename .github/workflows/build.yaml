@@ -59,14 +59,16 @@ jobs:
         command: build
         args: --release --target ${{ matrix.target }}
         
+    - name: Get Version
+      shell: bash
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
     - name: Build Archive
       shell: bash
       run: |
         mkdir artifacts
         binary_name="chordflow_tui"
-        current_version=$(cargo pkgid | cut -d "#" -f2)
-        app_name="${binary_name}-${current_version}-${{ matrix.target }}"
+        app_name="${binary_name}-${{ env.VERSION }}-${{ matrix.target }}"
         tar -czf artifacts/${app_name}.tar.gz target/${{ matrix.target }}/release/${binary_name} 
 
     - name: Upload Release Artifacts
@@ -104,14 +106,17 @@ jobs:
       shell: bash
       run: cargo install dioxus-cli
 
+    - name: Get Version
+      shell: bash
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
     - name: Build Archive
       shell: bash
       working-directory: ./chordflow_desktop
       run: |
         mkdir ../artifacts
         dx bundle --release
-        current_version=$(cargo pkgid | cut -d "#" -f2)
-        dmg_name="ChordFlow-${current_version}-${{ matrix.target }}.dmg"
+        dmg_name="ChordFlow-${{ env.VERSION }}-${{ matrix.target }}.dmg"
         mv ../target/dx/chordflow_desktop/bundle/macos/bundle/dmg/ChordflowDesktop_*.dmg ../artifacts/${dmg_name}
 
     - name: Upload Release Artifacts
