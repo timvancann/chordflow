@@ -1,32 +1,40 @@
-use std::{env, fs::File, io::Write, path::PathBuf, sync::mpsc, thread, time::Duration};
+use std::{fs::File, io::Cursor, path::PathBuf, sync::{mpsc, Arc}, thread, time::Duration};
 
 use chordflow_music_theory::chord::Chord;
-use fluidlite::{Settings, Synth};
-use log::debug;
+use rustysynth::{SoundFont, Synthesizer, SynthesizerSettings};
 use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
 
 const SAMPLE_RATE: usize = 44100;
 
 pub struct Audio {
     _stream: OutputStream,
-    pub synth: Synth,
+    pub synth: Synthesizer,
     pub sink: Sink,
 }
 
 pub fn play_chord_with_ticks(
-    synth: &mut Synth,
+    synth: &mut Synthesizer,
     notes: &[u32],
     chord_duration_ms: u64,
     ticks_per_bar: usize,
 ) -> Vec<f32> {
-    let mut buffer = vec![0.0; chord_duration_ms as usize * SAMPLE_RATE * 2 / 1000];
+    let sample_count = (chord_duration_ms as usize * SAMPLE_RATE) / 1000;
+    let mut left = vec![0.0; sample_count];
+    let mut right = vec![0.0; sample_count];
 
     // Play chord
     for note in notes {
-        synth.note_on(0, *note, 100).unwrap();
+        synth.note_on(0, *note as i32, 100);
     }
 
-    synth.write(buffer.as_mut_slice()).unwrap();
+    synth.render(&mut left, &mut right);
+
+    // Interleave
+    let mut buffer = vec![0.0; sample_count * 2];
+    for i in 0..sample_count {
+        buffer[i * 2] = left[i];
+        buffer[i * 2 + 1] = right[i];
+    }
 
     // Play metronome ticks (woodblock sound) every quarter note
     let tick_interval = chord_duration_ms / ticks_per_bar as u64;
@@ -37,30 +45,35 @@ pub fn play_chord_with_ticks(
 
     // Turn off chord
     for note in notes {
-        synth.note_off(0, *note).unwrap();
+        synth.note_off(0, *note as i32);
     }
 
     buffer
 }
 
-pub fn play_tick(synth: &mut Synth, tick_time: u64, buffer: &mut [f32]) {
+pub fn play_tick(synth: &mut Synthesizer, tick_time: u64, buffer: &mut [f32]) {
     let tick_note = 76; // High Woodblock in General MIDI
     let velocity = 120;
 
-    synth.note_on(9, tick_note, velocity).unwrap(); // Channel 9 = Percussion
-    let mut tick_buffer = vec![0.0; SAMPLE_RATE * 2 / 10]; // Small buffer for the tick (~100ms)
+    synth.note_on(9, tick_note, velocity); // Channel 9 = Percussion
+    
+    let sample_count = SAMPLE_RATE / 10; // ~100ms
+    let mut left = vec![0.0; sample_count];
+    let mut right = vec![0.0; sample_count];
 
-    synth.write(tick_buffer.as_mut_slice()).unwrap();
-    synth.note_off(9, tick_note).unwrap();
+    synth.render(&mut left, &mut right);
+    synth.note_off(9, tick_note);
 
     // Mix tick buffer into the main buffer at the correct time
-    let start_sample = (tick_time as usize * SAMPLE_RATE * 2 / 1000).min(buffer.len());
-    (0..tick_buffer.len()).for_each(|i| {
-        let idx = start_sample + i;
-        if idx < buffer.len() {
-            buffer[idx] += tick_buffer[i];
+    let start_sample_idx = (tick_time as usize * SAMPLE_RATE * 2) / 1000;
+    
+    for i in 0..sample_count {
+        let buf_idx = start_sample_idx + i * 2;
+        if buf_idx + 1 < buffer.len() {
+            buffer[buf_idx] += left[i];
+            buffer[buf_idx + 1] += right[i];
         }
-    });
+    }
 }
 
 #[derive(Clone, PartialEq)]
@@ -111,32 +124,20 @@ pub fn setup_audio(soundfont_path: Option<PathBuf>) -> mpsc::Sender<AudioCommand
     tx
 }
 
-pub fn create_synth(soundfont_path: Option<PathBuf>) -> fluidlite::Synth {
-    let settings = Settings::new().unwrap();
-
-    let synth = Synth::new(settings).expect("Failed to create synthesizer");
-    synth
-        .sfload(soundfont_path.unwrap_or(extract_soundfont()), true)
-        .unwrap();
-    synth
-}
-
-fn extract_soundfont() -> PathBuf {
-    let mut path = env::temp_dir();
-    path.push("guitar_practice_soundfont.sf2"); // Use a fixed filename
-    debug!("{:?}", path);
-
-    if !path.exists() {
-        // Load SoundFont bytes
+pub fn create_synth(soundfont_path: Option<PathBuf>) -> Synthesizer {
+    let settings = SynthesizerSettings::new(SAMPLE_RATE as i32);
+    
+    let sound_font = if let Some(path) = soundfont_path {
+        let mut file = File::open(path).expect("Failed to open SoundFont file");
+        SoundFont::new(&mut file).expect("Failed to load SoundFont")
+    } else {
         let soundfont_bytes = include_bytes!("../assets/TimGM6mb.sf2");
+        let mut cursor = Cursor::new(soundfont_bytes);
+        SoundFont::new(&mut cursor).expect("Failed to load embedded SoundFont")
+    };
 
-        // Create and write file
-        let mut file = File::create(&path).expect("Failed to create temp SoundFont file");
-        file.write_all(soundfont_bytes)
-            .expect("Failed to write SoundFont file");
-    }
-
-    path
+    let sound_font = Arc::new(sound_font);
+    Synthesizer::new(&sound_font, &settings).expect("Failed to create synthesizer")
 }
 
 pub fn create_audio_sink() -> (rodio::Sink, OutputStream) {

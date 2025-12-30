@@ -7,17 +7,25 @@ default-run = "chordflow_desktop"
 
 
 [dependencies]
-dioxus = { version = "0.6.3", features = ["router", "fullstack"] }
+dioxus = { version = "0.7.2", features = ["router", "fullstack", "desktop"] }
 chordflow_shared = {path = "../chordflow_shared/"}
 chordflow_audio = {path = "../chordflow_audio/"}
 chordflow_music_theory = {path = "../chordflow_music_theory/"}
-strum = { version = "0.27.0", features = ["derive"] }
-strum_macros = "0.27.0"
-tokio = "1.43.0"
-dioxus-free-icons = { version = "0.9.0", features = ["hero-icons-solid", "font-awesome-solid", "ionicons"] }
+strum = { version = "0.27.2", features = ["derive"] }
+strum_macros = "0.27.2"
+tokio = "1.48.0"
+dioxus-free-icons = { version = "0.10.0", features = ["hero-icons-solid", "font-awesome-solid", "ionicons", "lucide"] }
+dioxus-liveview = "0.7.2"
 
 [features]
 default = ["desktop"]
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
+
+[profile.release]
+opt-level = 2 # fast and small wasm
+
+# Optimize all dependencies even in debug builds:
+[profile.dev.package."*"]
+opt-level = 2
