@@ -3,6 +3,7 @@ name = "chordflow_desktop"
 version = "0.3.3"
 authors = ["Tim van Cann <timvancann@gmail.com>"]
 edition = "2021"
+default-run = "chordflow_desktop"
 
 
 [dependencies]
@@ -20,4 +21,3 @@ default = ["desktop"]
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
-
