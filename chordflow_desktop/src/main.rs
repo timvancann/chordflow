@@ -27,6 +27,9 @@ use hooks::use_metronome::use_metronome;
 
 mod components;
 mod hooks;
+mod top_zone;
+
+use crate::top_zone::layout::TopZone;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
@@ -112,25 +115,69 @@ fn App() -> Element {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
-        body { class: " bg-tokyoNight-bg text-tokyoNight-fg w-screen h-screen",
 
-            Header {}
-            div { class: "m-2 p-2 flex-col space-y-4",
+        div { class: "app-container",
+            // Ambient glow background
+            div { class: "ambient-bg" }
 
-
-                div { class: "flex space-x-4",
-                    div { class: " bg-tokyoNight-bg_highlight/70 p-4 rounded-md",
-                        ModeSelectionDisplay {}
+            // Fixed metronome zone - always top
+            TopZone {}
+            // Fixed center stage - always middle
+            div { class: "center-stage",
+                div { class: "chord-container",
+                    // Current chord
+                    div { class: "current-chord",
+                        "F"
+                        span { class: "accidental", "♯" }
+                        span { class: "quality", "m7" }
                     }
-                    div { class: " bg-tokyoNight-bg_highlight/70 flex-1 p-4 rounded-md flex-col space-y-4",
-                        div { class: "", MetronomeDisplay {} }
-                        div { class: "", MetronomSettingsDisplay {} }
-                        div { class: "", PracticeStateDisplay {} }
-                        div { class: "", PlayControls {} }
+
+                    // Next chord indicator
+                    div { class: "next-chord-row",
+                        div { class: "separator-line separator-left" }
+                        div { class: "next-chord",
+                            "Cmaj7"
+                            span { class: "accidental", "♯" }
+                            "9"
+                        }
+                        div { class: "separator-line separator-right" }
                     }
                 }
-                div { class: "flex-1 space-x-4",
-                    div { class: " bg-tokyoNight-bg_highlight/70 p-4 rounded-md", ConfigStateDisplay {} }
+            }
+
+            // Fixed control zone - always bottom
+            div { class: "bottom-zone",
+                div { class: "zone-content",
+                    // Left: Mode selector
+                    div { class: "control-group-left",
+                        span { class: "label-small", "Mode" }
+                        select { class: "select-styled",
+                            option { "Circle of Fourths" }
+                            option { "Diatonic Progression" }
+                            option { "Random Chords" }
+                        }
+                    }
+
+                    // Center: Playback controls
+                    div { class: "control-group-center",
+                        button {
+                            class: "btn-icon btn-large-icon",
+                            onclick: move |_| restart(),
+                            "↻"
+                        }
+                        button { class: "btn-primary", "▶" }
+                    }
+
+                    // Right: Quality selector
+                    div { class: "control-group-right",
+                        span { class: "label-small", "Quality" }
+                        select { class: "select-styled",
+                            option { "Major" }
+                            option { "Minor" }
+                            option { "Dominant 7th" }
+                            option { "Diminished" }
+                        }
+                    }
                 }
             }
         }
