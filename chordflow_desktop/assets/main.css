@@ -3,6 +3,7 @@
 :root {
     --bg-color: #0a0a0a;
     --accent-color: #00d9ff;
+    --secondary-accent-color: #ff8c32;
     --text-primary: #e5e5e5;
     --text-secondary: #737373;
     --text-muted: #525252;
@@ -130,7 +131,7 @@ body {
 .next-chord {
     font-family: var(--font-main);
     font-size: 40px;
-    color: #a3a3a3;
+    color: #ff8c32;
     font-weight: 400;
     letter-spacing: -0.02em;
 }
@@ -147,11 +148,11 @@ body {
 }
 
 .separator-left {
-    background: linear-gradient(to right, transparent, rgba(115, 115, 115, 0.4));
+    background: linear-gradient(to right, transparent, rgba(255, 140, 50, 0.3))
 }
 
 .separator-right {
-    background: linear-gradient(to left, transparent, rgba(115, 115, 115, 0.4));
+    background: linear-gradient(to left, transparent, rgba(255, 140, 50, 0.3));
 }
 
 
@@ -188,7 +189,8 @@ body {
 }
 
 .beat-block.current {
-    box-shadow: 0 0 16px rgba(0, 217, 255, 0.6);
+    box-shadow: 0 0 16px rgba(255, 140, 50, 0.6);
+    background: var(--secondary-accent-color);
 }
 
 .beat-block-inner-border {
@@ -197,7 +199,7 @@ body {
     left: -2px;
     right: -2px;
     bottom: -2px;
-    border: 1px solid var(--accent-color);
+    border: 1px solid var(--secondary-accent-color);
     border-radius: 1px;
 }
 
@@ -342,4 +344,49 @@ body {
 
 .select-styled:hover {
     border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Mode Selector */
+.mode-selector {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-right: 16px;
+}
+
+.segmented-control {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border-control);
+    border-radius: 4px;
+    padding: 4px;
+    height: 36px;
+}
+
+.segment {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    padding: 0 16px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-family: var(--font-main);
+    font-size: 13px;
+    transition: all 0.2s;
+    border-radius: 2px;
+    font-weight: 400;
+}
+
+.segment:hover {
+    color: var(--text-primary);
+}
+
+.segment.active {
+    border: 1px solid var(--accent-color);
+    background: rgba(0, 217, 255, 0.1);
+    color: var(--accent-color);
+    box-shadow: 0 0 12px rgba(0, 217, 255, 0.1);
 }
