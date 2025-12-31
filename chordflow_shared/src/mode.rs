@@ -6,7 +6,7 @@ use chordflow_music_theory::{
 };
 
 use crate::{
-    practice_state::{ConfigState, PracticState},
+    practice_state::{ConfigState, PracticeState},
     progression::Progression,
     DiatonicOption, ModeOption,
 };
@@ -41,7 +41,7 @@ impl Default for Mode {
 
 pub fn update_mode_from_state(
     selected_mode: &ModeOption,
-    practice_state: &mut PracticState,
+    practice_state: &mut PracticeState,
     config_state: &ConfigState,
 ) -> bool {
     match selected_mode {

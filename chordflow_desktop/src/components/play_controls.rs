@@ -2,8 +2,8 @@ use std::sync::mpsc::Sender;
 
 use chordflow_audio::audio::AudioCommand;
 use chordflow_shared::{
-    metronome::{calculate_duration_per_bar, MetronomeCommand},
-    practice_state::PracticState,
+    metronome::{calculate_duration_per_bar, MetronomeCommand, METRONOME_COMMAND_CHANNEL},
+    practice_state::PracticeState,
 };
 use dioxus::prelude::*;
 use dioxus_free_icons::{
@@ -16,18 +16,19 @@ use dioxus_free_icons::{
 
 use crate::{
     components::{apply_selected_changes, buttons::Button},
-    MetronomeSignal, MetronomeState,
+    MetronomeState,
 };
 
 pub fn restart() {
-    let mut practice_state: Signal<PracticState> = use_context();
+    let mut practice_state: Signal<PracticeState> = use_context();
     let mut metronome_state: Signal<MetronomeState> = use_context();
-    let metronome: MetronomeSignal = use_context();
     let tx_audio: Signal<Sender<AudioCommand>> = use_context();
     practice_state.write().reset();
     metronome_state.write().current_bar = 0;
     metronome_state.write().current_tick = 0;
-    let _ = metronome.read().0.send(MetronomeCommand::Reset);
+    let _ = METRONOME_COMMAND_CHANNEL
+        .0
+        .try_send(MetronomeCommand::Reset);
     let _ = tx_audio.read().send(AudioCommand::PlayChord((
         practice_state.read().current_chord,
         calculate_duration_per_bar(
@@ -41,7 +42,6 @@ pub fn restart() {
 
 #[component]
 pub fn PlayControls() -> Element {
-    let metronome: MetronomeSignal = use_context();
     let tx_audio: Signal<Sender<AudioCommand>> = use_context();
     rsx! {
         div { class: "flex justify-center items-center space-x-4",
@@ -64,7 +64,7 @@ pub fn PlayControls() -> Element {
             Button {
                 onclick: move |_| {
                     let _ = tx_audio.read().send(AudioCommand::Play);
-                    let _ = metronome.read().0.send(MetronomeCommand::Play);
+                    let _ = METRONOME_COMMAND_CHANNEL.0.try_send(MetronomeCommand::Play);
                 },
                 icon: rsx! {
                     Icon { icon: FaPlay }
@@ -72,7 +72,7 @@ pub fn PlayControls() -> Element {
             }
             Button {
                 onclick: move |_| {
-                    let _ = metronome.read().0.send(MetronomeCommand::Pause);
+                    let _ = METRONOME_COMMAND_CHANNEL.0.try_send(MetronomeCommand::Pause);
                     let _ = tx_audio.read().send(AudioCommand::Pause);
                 },
                 icon: rsx! {

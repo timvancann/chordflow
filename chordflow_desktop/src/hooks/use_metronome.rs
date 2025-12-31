@@ -2,35 +2,39 @@ use std::{sync::mpsc::Sender, time::Duration};
 
 use chordflow_audio::audio::AudioCommand;
 use chordflow_shared::{
-    metronome::{calculate_duration_per_bar, MetronomeCommand, MetronomeEvent},
+    metronome::{
+        calculate_duration_per_bar, MetronomeCommand, MetronomeEvent, METRONOME_COMMAND_CHANNEL,
+        METRONOME_EVENT_CHANNEL,
+    },
     mode::Mode,
-    practice_state::PracticState,
+    practice_state::PracticeState,
 };
 use dioxus::prelude::*;
 
-use crate::{MetronomeSignal, MetronomeState};
+use crate::MetronomeState;
 
 pub fn use_metronome(
-    metronome: MetronomeSignal,
     mut metronome_state: Signal<MetronomeState>,
-    mut practice_state: Signal<PracticState>,
+    mut practice_state: Signal<PracticeState>,
     audio_tx: Signal<Sender<AudioCommand>>,
 ) {
     use_future(move || async move {
-        let m = metronome.read();
-
         loop {
-            while let Ok(event) = m.1.try_recv() {
+            while let Ok(event) = METRONOME_EVENT_CHANNEL.1.try_recv() {
                 match event {
                     MetronomeEvent::CycleComplete => {
                         if let Mode::Custom(Some(p)) = &practice_state.read().mode {
                             metronome_state.write().bars_per_chord =
                                 p.chords[practice_state.read().next_progression_chord_idx].bars;
                         }
-                        let _ = m.0.send(MetronomeCommand::SetBars(
-                            metronome_state.read().bars_per_chord,
-                        ));
-                        let _ = m.0.send(MetronomeCommand::Reset);
+                        let _ = METRONOME_COMMAND_CHANNEL
+                            .0
+                            .try_send(MetronomeCommand::SetBars(
+                                metronome_state.read().bars_per_chord,
+                            ));
+                        let _ = METRONOME_COMMAND_CHANNEL
+                            .0
+                            .try_send(MetronomeCommand::Reset);
                         practice_state.write().next_chord();
                         metronome_state.write().current_bar = 0;
                         metronome_state.write().current_tick = 0;

@@ -1,8 +1,17 @@
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use std::{
-    sync::mpsc,
+    sync::LazyLock,
     thread,
     time::{Duration, Instant},
 };
+
+pub static METRONOME_COMMAND_CHANNEL: LazyLock<(
+    Sender<MetronomeCommand>,
+    Receiver<MetronomeCommand>,
+)> = LazyLock::new(|| unbounded());
+
+pub static METRONOME_EVENT_CHANNEL: LazyLock<(Sender<MetronomeEvent>, Receiver<MetronomeEvent>)> =
+    LazyLock::new(|| unbounded());
 
 pub struct Metronome {
     pub num_bars: usize,
@@ -104,7 +113,6 @@ pub enum MetronomeCommand {
     Pause,
     Play,
 }
-
 pub enum MetronomeEvent {
     BarComplete(usize),
     CycleComplete,
@@ -116,20 +124,14 @@ pub fn setup_metronome(
     num_bars: usize,
     num_beats: usize,
     timer_source: impl Fn() -> Instant + 'static + Send + Copy,
-) -> (
-    mpsc::Sender<MetronomeCommand>,
-    mpsc::Receiver<MetronomeEvent>,
 ) {
-    let (tx_command, rx_command) = mpsc::channel();
-    let (tx_event, rx_event) = mpsc::channel();
-
     thread::spawn(move || {
         let mut metronome = Metronome::new(bpm, num_bars, num_beats, timer_source);
         let mut running = true;
 
         metronome.last_tick_time = timer_source();
         loop {
-            while let Ok(command) = rx_command.try_recv() {
+            while let Ok(command) = METRONOME_COMMAND_CHANNEL.1.try_recv() {
                 match command {
                     MetronomeCommand::SetBars(n) => metronome.num_bars = n,
                     MetronomeCommand::Reset => metronome.reset(),
@@ -161,12 +163,18 @@ pub fn setup_metronome(
 
             if elapsed >= tick_duration {
                 let current_tick = metronome.tick();
-                let _ = tx_event.send(MetronomeEvent::Tick(current_tick));
+                let _ = METRONOME_EVENT_CHANNEL
+                    .0
+                    .try_send(MetronomeEvent::Tick(current_tick));
                 if metronome.has_cycle_ended() {
-                    let _ = tx_event.send(MetronomeEvent::CycleComplete);
+                    let _ = METRONOME_EVENT_CHANNEL
+                        .0
+                        .try_send(MetronomeEvent::CycleComplete);
                 }
                 if metronome.has_bar_ended() {
-                    let _ = tx_event.send(MetronomeEvent::BarComplete(metronome.current_bar));
+                    let _ = METRONOME_EVENT_CHANNEL
+                        .0
+                        .try_send(MetronomeEvent::BarComplete(metronome.current_bar));
                 }
 
                 // Reset the timer
@@ -182,6 +190,4 @@ pub fn setup_metronome(
             }
         }
     });
-
-    (tx_command, rx_event)
 }

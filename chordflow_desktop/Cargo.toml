@@ -7,7 +7,7 @@ default-run = "chordflow_desktop"
 
 
 [dependencies]
-dioxus = { version = "0.7.2", features = ["router", "fullstack", "desktop"] }
+dioxus = { version = "0.7.2", features = ["router", "desktop"] }
 chordflow_shared = {path = "../chordflow_shared/"}
 chordflow_audio = {path = "../chordflow_audio/"}
 chordflow_music_theory = {path = "../chordflow_music_theory/"}

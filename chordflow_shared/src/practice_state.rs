@@ -34,7 +34,7 @@ impl Default for ConfigState {
 }
 
 #[derive(PartialEq, Clone)]
-pub struct PracticState {
+pub struct PracticeState {
     pub current_chord: Chord,
     pub next_chord: Chord,
     pub mode: Mode,
@@ -43,7 +43,7 @@ pub struct PracticState {
     pub next_progression_chord_idx: usize,
 }
 
-impl PracticState {
+impl PracticeState {
     pub fn set_mode(&mut self, mode: Mode) -> bool {
         if mode == self.mode {
             return false;
@@ -157,12 +157,12 @@ fn normalize(interval: i32, base: i32) -> i32 {
     (interval + base) % base
 }
 
-impl Default for PracticState {
+impl Default for PracticeState {
     fn default() -> Self {
         let mode = Mode::Fourths(Quality::Major);
         let current_chord = Chord::new(Note::new(NoteLetter::B, 0), Quality::Major);
         let next_chord = Chord::new(Note::new(NoteLetter::E, 0), Quality::Major);
-        PracticState {
+        PracticeState {
             mode,
             current_chord,
             next_chord,

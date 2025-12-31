@@ -1,10 +1,10 @@
-use chordflow_shared::practice_state::{self, PracticState};
+use chordflow_shared::practice_state::{self, PracticeState};
 
 use dioxus::prelude::*;
 
 #[component]
 pub fn PracticeStateDisplay() -> Element {
-    let practice_state: Signal<PracticState> = use_context();
+    let practice_state: Signal<PracticeState> = use_context();
     let chord = practice_state.read().current_chord;
     let next_chord = practice_state.read().next_chord;
     rsx! {

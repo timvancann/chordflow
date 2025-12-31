@@ -231,6 +231,9 @@ body {
     color: var(--text-primary);
     font-weight: 300;
     letter-spacing: -0.02em;
+    min-width: 2.0em;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 .bpm-label {

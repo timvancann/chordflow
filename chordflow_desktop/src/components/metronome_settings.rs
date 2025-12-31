@@ -1,4 +1,4 @@
-use chordflow_shared::metronome::MetronomeCommand;
+use chordflow_shared::metronome::{MetronomeCommand, METRONOME_COMMAND_CHANNEL};
 use dioxus::prelude::*;
 
 use dioxus_free_icons::{
@@ -6,14 +6,13 @@ use dioxus_free_icons::{
     Icon,
 };
 
-use crate::{components::buttons::Button, MetronomeSignal, MetronomeState};
+use crate::{components::buttons::Button, MetronomeState};
 
 #[component]
 pub fn MetronomSettingsDisplay() -> Element {
-    let metronome: MetronomeSignal = use_context();
     let mut metronome_state: Signal<MetronomeState> = use_context();
     rsx! {
-        div { class: "flex-col",
+        div { class: "flex-col metronome-display",
             div { class: "flex items-center justify-center align-middle space-x-4",
                 Button {
                     icon: rsx! {
@@ -21,7 +20,7 @@ pub fn MetronomSettingsDisplay() -> Element {
                     },
                     onclick: move |_| {
                         metronome_state.write().bpm -= 2;
-                        let _ = metronome.read().0.send(MetronomeCommand::DecreaseBpm(2));
+                        let _ = METRONOME_COMMAND_CHANNEL.0.try_send(MetronomeCommand::DecreaseBpm(2));
                     },
                 }
                 div { class: "space-x-1 align-middle inline-block",
@@ -33,7 +32,7 @@ pub fn MetronomSettingsDisplay() -> Element {
                     class: "button space-x-1 flex align-middle items-center",
                     onclick: move |_| {
                         metronome_state.write().bpm += 2;
-                        let _ = metronome.read().0.send(MetronomeCommand::IncreaseBpm(2));
+                        let _ = METRONOME_COMMAND_CHANNEL.0.try_send(MetronomeCommand::IncreaseBpm(2));
                     },
                     Icon { icon: HiPlusCircle }
                 }

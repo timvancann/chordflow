@@ -14,7 +14,7 @@ use std::time::{Duration, Instant};
 
 use chordflow_audio::audio::{setup_audio, AudioCommand};
 use chordflow_music_theory::quality::Quality;
-use chordflow_shared::{mode::Mode, practice_state::PracticState, DiatonicOption, ModeOption};
+use chordflow_shared::{mode::Mode, practice_state::PracticeState, DiatonicOption, ModeOption};
 use strum::{AsRefStr, EnumCount, FromRepr, IntoEnumIterator};
 
 mod keymap;
@@ -85,7 +85,7 @@ struct App {
 
     random_qualities_cursor: Quality,
     custom_input_buffer: String,
-    practice_state: PracticState,
+    practice_state: PracticeState,
 
     tx_audio: Sender<AudioCommand>,
     tx_metronome: Sender<MetronomeCommand>,
@@ -108,7 +108,7 @@ impl App {
             config_state: ConfigState::default(),
             random_qualities_cursor: Quality::Major,
             custom_input_buffer: String::new(),
-            practice_state: PracticState::default(),
+            practice_state: PracticeState::default(),
             bars_per_chord,
             ticks_per_bar,
             current_bar: 0,

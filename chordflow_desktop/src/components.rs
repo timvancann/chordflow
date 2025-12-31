@@ -2,14 +2,14 @@ use std::{borrow::BorrowMut, sync::mpsc::Sender};
 
 use chordflow_audio::audio::AudioCommand;
 use chordflow_shared::{
-    metronome::{calculate_duration_per_bar, MetronomeCommand},
+    metronome::{calculate_duration_per_bar, MetronomeCommand, METRONOME_COMMAND_CHANNEL},
     mode::{update_mode_from_state, Mode},
-    practice_state::{ConfigState, PracticState},
+    practice_state::{ConfigState, PracticeState},
     ModeOption,
 };
 use dioxus::prelude::*;
 
-use crate::{MetronomeSignal, MetronomeState};
+use crate::{MetronomeState};
 
 pub mod buttons;
 pub mod config_state;
@@ -23,9 +23,8 @@ pub mod practice_state;
 pub fn apply_selected_changes() {
     let mut metronome_state: Signal<MetronomeState> = use_context();
     let selected_mode: Signal<ModeOption> = use_context();
-    let mut practice_state: Signal<PracticState> = use_context();
+    let mut practice_state: Signal<PracticeState> = use_context();
     let config_state: Signal<ConfigState> = use_context();
-    let metronome: MetronomeSignal = use_context();
     let tx_audio: Signal<Sender<AudioCommand>> = use_context();
     let has_changed = update_mode_from_state(
         &selected_mode(),
@@ -36,11 +35,11 @@ pub fn apply_selected_changes() {
         metronome_state.write().bars_per_chord =
             p.chords[practice_state().current_progression_chord_idx].bars;
     }
-    let _ = metronome.read().0.send(MetronomeCommand::SetBars(
+    let _ = METRONOME_COMMAND_CHANNEL.0.try_send(MetronomeCommand::SetBars(
         metronome_state.read().bars_per_chord,
     ));
     if has_changed {
-        let _ = metronome.read().0.send(MetronomeCommand::Reset);
+        let _ = METRONOME_COMMAND_CHANNEL.0.try_send(MetronomeCommand::Reset);
         metronome_state.write().current_bar = 0;
         metronome_state.write().current_tick = 0;
         let _ = tx_audio.read().send(AudioCommand::PlayChord((

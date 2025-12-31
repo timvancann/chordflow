@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 
 use crate::MetronomeState;
+static ICON: Asset = asset!("/assets/images/metronome.svg");
 
 #[component]
 pub fn MetronomeDisplay() -> Element {
@@ -8,8 +9,8 @@ pub fn MetronomeDisplay() -> Element {
 
     let m = metronome_state.read();
     rsx! {
-        div { class: "space-y-4",
-            div { class: "flex justify-center gap-2",
+        div { class: "relative metronome",
+            div { class: "metronome-display",
                 for bar in 0..metronome_state.read().bars_per_chord {
                     if bar > 0 {
                         span { class: "text-tokyoNight-orange", " | " }

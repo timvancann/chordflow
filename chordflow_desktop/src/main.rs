@@ -1,23 +1,16 @@
 use std::{
     fmt::Display,
-    sync::mpsc::{Receiver, Sender},
     time::Instant,
 };
 
 use chordflow_audio::audio::setup_audio;
 use chordflow_shared::{
-    metronome::{setup_metronome, MetronomeCommand, MetronomeEvent},
-    practice_state::{ConfigState, PracticState},
+    metronome::{setup_metronome},
+    practice_state::{ConfigState, PracticeState},
     ModeOption,
 };
 use components::{
-    config_state::ConfigStateDisplay,
-    header::Header,
-    metronome::MetronomeDisplay,
-    metronome_settings::MetronomSettingsDisplay,
-    mode_selection::ModeSelectionDisplay,
     play_controls::{restart, PlayControls},
-    practice_state::PracticeStateDisplay,
 };
 use dioxus::{
     desktop::{tao::platform::macos::WindowBuilderExtMacOS, Config, LogicalSize, WindowBuilder},
@@ -25,11 +18,13 @@ use dioxus::{
 };
 use hooks::use_metronome::use_metronome;
 
+mod bottom_zone;
+mod center_stage;
 mod components;
 mod hooks;
 mod top_zone;
 
-use crate::top_zone::layout::TopZone;
+use crate::{bottom_zone::layout::BottomZone, center_stage::layout::CenterStage, top_zone::layout::TopZone};
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
@@ -37,7 +32,7 @@ const MAIN_CSS: Asset = asset!("/assets/main.css");
 
 fn main() {
     let window_builder = WindowBuilder::new()
-        .with_transparent(true)
+        .with_transparent(false)
         .with_decorations(true)
         .with_focused(true)
         .with_resizable(true)
@@ -55,8 +50,6 @@ fn main() {
     dioxus::LaunchBuilder::new().with_cfg(config).launch(App);
 }
 
-type MetronomeSignal = Signal<(Sender<MetronomeCommand>, Receiver<MetronomeEvent>)>;
-
 #[derive(PartialEq, Clone, Copy)]
 struct MetronomeState {
     bars_per_chord: usize,
@@ -64,6 +57,11 @@ struct MetronomeState {
     bpm: usize,
     current_bar: usize,
     current_tick: usize,
+}
+
+#[derive(PartialEq, Clone, Copy)]
+struct AppState {
+    is_playing: bool,
 }
 
 impl Display for MetronomeState {
@@ -76,11 +74,13 @@ impl Display for MetronomeState {
     }
 }
 
+
+
 #[component]
 fn App() -> Element {
     let audio_tx = use_signal(|| setup_audio(None));
     let metronome = use_signal(|| setup_metronome(100, 2, 4, Instant::now));
-    let practice_state = use_signal(PracticState::default);
+    let practice_state = use_signal(PracticeState::default);
     let selected_mode = use_signal(|| ModeOption::Fourths);
     let config_state = use_signal(ConfigState::default);
     let metronome_state = use_signal(|| MetronomeState {
@@ -90,6 +90,9 @@ fn App() -> Element {
         current_bar: 0,
         current_tick: 0,
     });
+    let app_state = use_signal(|| AppState {
+        is_playing: true
+    });
 
     use_context_provider(|| audio_tx);
     use_context_provider(|| metronome);
@@ -97,8 +100,9 @@ fn App() -> Element {
     use_context_provider(|| selected_mode);
     use_context_provider(|| config_state);
     use_context_provider(|| metronome_state);
+    use_context_provider(|| app_state);
 
-    use_metronome(metronome, metronome_state, practice_state, audio_tx);
+    use_metronome(metronome_state, practice_state, audio_tx);
 
     let mut initial_setup = use_signal(|| true);
 
@@ -120,66 +124,9 @@ fn App() -> Element {
             // Ambient glow background
             div { class: "ambient-bg" }
 
-            // Fixed metronome zone - always top
             TopZone {}
-            // Fixed center stage - always middle
-            div { class: "center-stage",
-                div { class: "chord-container",
-                    // Current chord
-                    div { class: "current-chord",
-                        "F"
-                        span { class: "accidental", "♯" }
-                        span { class: "quality", "m7" }
-                    }
-
-                    // Next chord indicator
-                    div { class: "next-chord-row",
-                        div { class: "separator-line separator-left" }
-                        div { class: "next-chord",
-                            "Cmaj7"
-                            span { class: "accidental", "♯" }
-                            "9"
-                        }
-                        div { class: "separator-line separator-right" }
-                    }
-                }
-            }
-
-            // Fixed control zone - always bottom
-            div { class: "bottom-zone",
-                div { class: "zone-content",
-                    // Left: Mode selector
-                    div { class: "control-group-left",
-                        span { class: "label-small", "Mode" }
-                        select { class: "select-styled",
-                            option { "Circle of Fourths" }
-                            option { "Diatonic Progression" }
-                            option { "Random Chords" }
-                        }
-                    }
-
-                    // Center: Playback controls
-                    div { class: "control-group-center",
-                        button {
-                            class: "btn-icon btn-large-icon",
-                            onclick: move |_| restart(),
-                            "↻"
-                        }
-                        button { class: "btn-primary", "▶" }
-                    }
-
-                    // Right: Quality selector
-                    div { class: "control-group-right",
-                        span { class: "label-small", "Quality" }
-                        select { class: "select-styled",
-                            option { "Major" }
-                            option { "Minor" }
-                            option { "Dominant 7th" }
-                            option { "Diminished" }
-                        }
-                    }
-                }
-            }
+            CenterStage {}
+            BottomZone {}
         }
     }
 }
