@@ -1,10 +1,7 @@
 [workspace]
 members = [
-    "chordflow_audio",
     "chordflow_desktop",
     "chordflow_music_theory",
-    "chordflow_shared",
-    # "chordflow_tui",
 ]
 
 [profile]

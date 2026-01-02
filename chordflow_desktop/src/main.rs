@@ -1,34 +1,33 @@
-use std::{
-    fmt::Display,
-    time::Instant,
+use std::sync::LazyLock;
+
+use crossbeam_channel::{bounded, Receiver, Sender};
+use dioxus::desktop::{
+    tao::platform::macos::WindowBuilderExtMacOS, Config, LogicalSize, WindowBuilder,
 };
 
-use chordflow_audio::audio::setup_audio;
-use chordflow_shared::{
-    metronome::{setup_metronome},
-    practice_state::{ConfigState, PracticeState},
-    ModeOption,
-};
-use components::{
-    play_controls::{restart, PlayControls},
-};
-use dioxus::{
-    desktop::{tao::platform::macos::WindowBuilderExtMacOS, Config, LogicalSize, WindowBuilder},
-    prelude::*,
-};
-use hooks::use_metronome::use_metronome;
+use crate::{audio::stream::init_stream, ui::app::App};
 
-mod bottom_zone;
-mod center_stage;
-mod components;
-mod hooks;
-mod top_zone;
+mod audio;
+mod ui;
 
-use crate::{bottom_zone::layout::BottomZone, center_stage::layout::CenterStage, top_zone::layout::TopZone};
+pub enum AudioCommand {
+    Start,
+    Stop,
+    SetBPM(u16),
+    SetBarsPerCycle(u8),
+    SetSubdivision(u8, u8),
+}
 
-const FAVICON: Asset = asset!("/assets/favicon.ico");
-const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
-const MAIN_CSS: Asset = asset!("/assets/main.css");
+pub enum AudioEvent {
+    Tick,
+}
+
+pub const INITIAL_BPM: u16 = 100;
+
+pub static AUDIO_CMD: LazyLock<(Sender<AudioCommand>, Receiver<AudioCommand>)> =
+    LazyLock::new(|| bounded(128));
+pub static AUDIO_EVT: LazyLock<(Sender<AudioEvent>, Receiver<AudioEvent>)> =
+    LazyLock::new(|| bounded(64));
 
 fn main() {
     let window_builder = WindowBuilder::new()
@@ -47,86 +46,12 @@ fn main() {
 
     let config = Config::default().with_window(window_builder);
 
-    dioxus::LaunchBuilder::new().with_cfg(config).launch(App);
-}
+    println!("Initializing audio system...");
+    // Initialize and leak the audio stream to keep it alive for the application lifetime
+    let stream = init_stream().expect("Failed to initialize audio stream");
+    println!("Audio stream created, leaking to keep alive...");
+    Box::leak(Box::new(stream));
 
-#[derive(PartialEq, Clone, Copy)]
-struct MetronomeState {
-    bars_per_chord: usize,
-    ticks_per_bar: usize,
-    bpm: usize,
-    current_bar: usize,
-    current_tick: usize,
-}
-
-#[derive(PartialEq, Clone, Copy)]
-struct AppState {
-    is_playing: bool,
-}
-
-impl Display for MetronomeState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "BPM: {}, Bar: {}/{} Tick: {}/{}",
-            self.bpm, self.current_bar, self.bars_per_chord, self.current_tick, self.ticks_per_bar
-        )
-    }
-}
-
-
-
-#[component]
-fn App() -> Element {
-    let audio_tx = use_signal(|| setup_audio(None));
-    let metronome = use_signal(|| setup_metronome(100, 2, 4, Instant::now));
-    let practice_state = use_signal(PracticeState::default);
-    let selected_mode = use_signal(|| ModeOption::Fourths);
-    let config_state = use_signal(ConfigState::default);
-    let metronome_state = use_signal(|| MetronomeState {
-        bars_per_chord: 2,
-        ticks_per_bar: 4,
-        bpm: 100,
-        current_bar: 0,
-        current_tick: 0,
-    });
-    let app_state = use_signal(|| AppState {
-        is_playing: true
-    });
-
-    use_context_provider(|| audio_tx);
-    use_context_provider(|| metronome);
-    use_context_provider(|| practice_state);
-    use_context_provider(|| selected_mode);
-    use_context_provider(|| config_state);
-    use_context_provider(|| metronome_state);
-    use_context_provider(|| app_state);
-
-    use_metronome(metronome_state, practice_state, audio_tx);
-
-    let mut initial_setup = use_signal(|| true);
-
-    use_effect(move || {
-        if !*initial_setup.read() {
-            return;
-        }
-        restart();
-        initial_setup.set(false);
-    });
-
-    rsx! {
-        // Global app resources
-        document::Link { rel: "icon", href: FAVICON }
-        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
-        document::Link { rel: "stylesheet", href: MAIN_CSS }
-
-        div { class: "app-container",
-            // Ambient glow background
-            div { class: "ambient-bg" }
-
-            TopZone {}
-            CenterStage {}
-            BottomZone {}
-        }
-    }
+    println!("Launching Dioxus application...");
+    dioxus::LaunchBuilder::new().with_cfg(config).launch(App)
 }

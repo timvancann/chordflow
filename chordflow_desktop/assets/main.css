@@ -302,8 +302,8 @@ body {
 }
 
 .btn-primary {
-    width: 56px;
-    height: 56px;
+    width: 44px;
+    height: 44px;
     background: var(--accent-color);
     border: none;
     border-radius: 2px;
