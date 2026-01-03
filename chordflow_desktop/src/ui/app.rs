@@ -8,7 +8,11 @@ const MAIN_CSS: Asset = asset!("/assets/main.css");
 
 // use crate::ui::bottom_zone::layout::BottomZone;
 // use crate::ui::center_stage::layout::CenterStage;
-use crate::{ui::top_zone::layout::TopZone, AudioEvent, AUDIO_EVT, INITIAL_BPM};
+use crate::{
+    state::practice::PracticeState,
+    ui::{center_stage::layout::CenterStage, top_zone::layout::TopZone},
+    AudioEvent, AUDIO_EVT, INITIAL_BPM,
+};
 
 pub struct MetronomeState {
     pub bars_per_chord: u8,
@@ -24,42 +28,50 @@ impl Default for MetronomeState {
             bars_per_chord: 2,
             ticks_per_bar: 4,
             bpm: INITIAL_BPM,
-            current_bar: 0,
+            current_bar: 1,
             current_tick: 0,
         }
     }
 }
 
+pub struct MetronomeChange {
+    pub bar_done: bool,
+    pub cycle_done: bool,
+}
+
 impl MetronomeState {
-    fn tick(&mut self) {
+    fn tick(&mut self) -> MetronomeChange {
         self.current_tick += 1;
+        let mut change = MetronomeChange {
+            bar_done: false,
+            cycle_done: false,
+        };
         if self.current_tick > self.ticks_per_bar {
             self.current_tick = 1;
             self.current_bar += 1;
+            change.bar_done = true;
+
             if self.current_bar > self.bars_per_chord {
                 self.current_bar = 1;
+                change.cycle_done = true;
             }
         }
+        change
     }
 }
 
+#[derive(Default)]
 pub struct AppState {
     pub is_playing: bool,
 }
 
-impl Default for AppState {
-    fn default() -> Self {
-        Self { is_playing: false }
-    }
-}
-
 #[component]
 pub fn App() -> Element {
-    // let practice_state = use_signal(PracticeState::default);
     // let selected_mode = use_signal(|| ModeOption::Fourths);
     // let config_state = use_signal(ConfigState::default);
     // let metronome_state = use_signal(|| default_metronome_state );
     let app_state = use_signal(AppState::default);
+    let mut practice_state = use_signal(PracticeState::default);
     let mut metronome_state = use_signal(MetronomeState::default);
 
     // let _audio_engine = use_signal(|| setup_audio(default_metronome_state, None).expect("Failed to setup audio"));
@@ -70,6 +82,7 @@ pub fn App() -> Element {
 
     // use_metronome(metronome_state, practice_state);
     use_context_provider(|| app_state);
+    use_context_provider(|| practice_state);
     use_context_provider(|| metronome_state);
 
     let _ = use_future(move || async move {
@@ -77,11 +90,17 @@ pub fn App() -> Element {
             while let Ok(event) = AUDIO_EVT.1.try_recv() {
                 match event {
                     AudioEvent::Tick => {
-                        metronome_state.write().tick();
+                        let change = metronome_state.write().tick();
+                        if change.bar_done {
+                            // Handle bar done logic here
+                        }
+                        if change.cycle_done {
+                            practice_state.write().next_chord();
+                        }
                     }
                 }
             }
-            tokio::time::sleep(Duration::from_millis(10)).await;
+            tokio::time::sleep(Duration::from_millis(15)).await;
         }
     });
 
@@ -97,7 +116,7 @@ pub fn App() -> Element {
             div { class: "ambient-bg" }
 
             TopZone {}
-                // CenterStage {}
+            CenterStage {}
         // BottomZone {}
         }
     }

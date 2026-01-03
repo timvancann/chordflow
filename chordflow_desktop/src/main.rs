@@ -8,6 +8,8 @@ use dioxus::desktop::{
 use crate::{audio::stream::init_stream, ui::app::App};
 
 mod audio;
+mod progression;
+mod state;
 mod ui;
 
 pub enum AudioCommand {
@@ -22,11 +24,18 @@ pub enum AudioEvent {
     Tick,
 }
 
+pub enum MetronomeEvent {
+    BarComplete,
+    CycleComplete,
+}
+
 pub const INITIAL_BPM: u16 = 100;
 
 pub static AUDIO_CMD: LazyLock<(Sender<AudioCommand>, Receiver<AudioCommand>)> =
     LazyLock::new(|| bounded(128));
 pub static AUDIO_EVT: LazyLock<(Sender<AudioEvent>, Receiver<AudioEvent>)> =
+    LazyLock::new(|| bounded(64));
+pub static METRONOME_EVT: LazyLock<(Sender<MetronomeEvent>, Receiver<MetronomeEvent>)> =
     LazyLock::new(|| bounded(64));
 
 fn main() {

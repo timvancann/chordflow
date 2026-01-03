@@ -6,9 +6,12 @@ use chordflow_music_theory::{
 };
 
 use crate::{
-    practice_state::{ConfigState, PracticeState},
     progression::Progression,
-    DiatonicOption, ModeOption,
+    state::{
+        config::ConfigState,
+        options::{DiatonicOption, ModeOption},
+        practice::PracticeState,
+    },
 };
 
 #[derive(Debug, PartialEq, Clone)]

@@ -1,3 +1,7 @@
+use chordflow_music_theory::{note::Note, quality::Quality};
+use strum::IntoEnumIterator;
+
+use crate::{progression::Progression, state::options::DiatonicOption};
 
 #[derive(Clone, PartialEq)]
 pub struct ConfigState {

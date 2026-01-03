@@ -36,7 +36,6 @@ pub fn PlayControls() -> Element {
                     Icon { icon: FaPlay }
                 }
             }
-        
         }
 
     }

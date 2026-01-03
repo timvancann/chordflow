@@ -1,5 +1,3 @@
-use std::ops::Not;
-
 use chordflow_music_theory::{
     chord::Chord,
     interval::Interval,
@@ -9,9 +7,8 @@ use chordflow_music_theory::{
     util::random_chord,
 };
 use rand::{rng, seq::IndexedRandom};
-use strum::IntoEnumIterator;
 
-use crate::{mode::Mode, progression::Progression, DiatonicOption};
+use crate::state::{mode::Mode, options::DiatonicOption};
 
 #[derive(PartialEq, Clone)]
 pub struct PracticeState {

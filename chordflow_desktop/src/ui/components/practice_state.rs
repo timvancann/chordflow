@@ -1,5 +1,3 @@
-use chordflow_shared::practice_state::PracticeState;
-
 use dioxus::prelude::*;
 
 #[component]

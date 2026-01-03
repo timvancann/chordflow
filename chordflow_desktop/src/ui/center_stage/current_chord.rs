@@ -1,5 +1,6 @@
-use chordflow_shared::practice_state::PracticeState;
 use dioxus::prelude::*;
+
+use crate::state::practice::PracticeState;
 
 pub fn CurrentChord() -> Element {
     let practice_state: Signal<PracticeState> = use_context();
