@@ -1,4 +1,3 @@
-
 pub fn create_synth(soundfont_path: Option<PathBuf>) -> Synthesizer {
     let sample_rate = 44100;
     let settings = SynthesizerSettings::new(sample_rate);
@@ -14,16 +13,4 @@ pub fn create_synth(soundfont_path: Option<PathBuf>) -> Synthesizer {
 
     let sound_font = Arc::new(sound_font);
     Synthesizer::new(&sound_font, &settings).expect("Failed to create synthesizer")
-}
-
-pub fn note_to_midi(semitones_from_c: i32) -> u32 {
-    ((semitones_from_c % 12) + 60) as u32
-}
-
-pub fn chord_to_midi(chord: Chord) -> Vec<u32> {
-    chord
-        .to_c_based_semitones()
-        .into_iter()
-        .map(note_to_midi)
-        .collect()
 }

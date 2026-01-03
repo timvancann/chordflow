@@ -1,22 +1,20 @@
-use crate::AudioCommand;
-use crate::AudioEvent;
-use crate::AUDIO_CMD;
-use crate::AUDIO_EVT;
+use crate::{AudioCommand, AudioEvent, AUDIO_CMD, AUDIO_EVT};
 use anyhow::Result;
-use cpal::traits::HostTrait;
-use cpal::traits::{DeviceTrait, StreamTrait};
-use cpal::Stream;
-use rustysynth::SoundFont;
-use rustysynth::Synthesizer;
-use rustysynth::SynthesizerSettings;
-use std::fs::File;
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::AtomicU64;
-use std::sync::atomic::{AtomicU16, Ordering};
-use std::sync::Arc;
+use chordflow_music_theory::chord::Chord;
+use cpal::{
+    traits::{DeviceTrait, HostTrait, StreamTrait},
+    Stream,
+};
+use rustysynth::{SoundFont, Synthesizer, SynthesizerSettings};
+use std::{
+    fs::File,
+    sync::{
+        atomic::{AtomicBool, AtomicU16, AtomicU64, Ordering},
+        Arc,
+    },
+};
 
 pub fn init_stream() -> Result<Stream> {
-    println!("Initializing audio stream...");
     let host = cpal::default_host();
     let device = host
         .default_output_device()
@@ -25,51 +23,37 @@ pub fn init_stream() -> Result<Stream> {
     // Start from the default output configuration so we match the device's expectations
     let config = device.default_output_config()?.config();
     let sample_rate = config.sample_rate.0;
-    println!(
-        "Audio device configured: {} channels, {} Hz",
-        channels, sample_rate
-    );
 
     let bpm: Arc<AtomicU16> = Arc::new(AtomicU16::new(120));
     let is_playing: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
     let sample_counter = Arc::new(AtomicU64::new(0));
     let next_click_sample = Arc::new(AtomicU64::new(0));
+    let chord: Arc<parking_lot::Mutex<Option<Vec<i32>>>> = Arc::new(parking_lot::Mutex::new(None));
 
     // Load and verify soundfont
-    println!("Loading soundfont...");
     let mut sf2 = File::open("assets/TimGM6mb.sf2")
         .map_err(|e| anyhow::anyhow!("Failed to open soundfont file: {}", e))?;
-    println!("Soundfont file opened, parsing...");
     let sound_font = Arc::new(
         SoundFont::new(&mut sf2)
             .map_err(|e| anyhow::anyhow!("Failed to parse soundfont: {}", e))?,
     );
 
-    println!(
-        "Soundfont loaded successfully with {} presets",
-        sound_font.get_presets().len()
-    );
-
     // Create the synthesizer.
-    println!("Creating synthesizer...");
     let settings = SynthesizerSettings::new(sample_rate as i32);
     let synthesizer = Arc::new(parking_lot::Mutex::new(
         Synthesizer::new(&sound_font, &settings)
             .map_err(|e| anyhow::anyhow!("Failed to create synthesizer: {}", e))?,
     ));
-    println!("Synthesizer created successfully");
 
     // Clone atomics for the command handler thread
-    println!("Setting up command handler thread...");
     let bpm_cmd = bpm.clone();
     let is_playing_cmd = is_playing.clone();
     let next_click_sample_cmd = next_click_sample.clone();
     let sample_counter_cmd = sample_counter.clone();
+    let chord_cmd = chord.clone();
 
     // Spawn a dedicated thread to handle audio commands
-    println!("Spawning command handler thread...");
     std::thread::spawn(move || {
-        println!("Command handler thread started");
         loop {
             while let Ok(cmd) = AUDIO_CMD.1.try_recv() {
                 match cmd {
@@ -85,6 +69,14 @@ pub fn init_stream() -> Result<Stream> {
                     AudioCommand::SetBPM(new_bpm) => {
                         bpm_cmd.store(new_bpm, Ordering::Relaxed);
                     }
+                    AudioCommand::SetChord(new_chord) => {
+                        if let Some(chord) = new_chord {
+                            let midi_notes = chord_to_midi(chord);
+                            *chord_cmd.lock() = Some(midi_notes);
+                        } else {
+                            *chord_cmd.lock() = None;
+                        }
+                    }
                     _ => {}
                 }
             }
@@ -98,8 +90,12 @@ pub fn init_stream() -> Result<Stream> {
     const WOODBLOCK_NOTE: i32 = 76;
     const WOODBLOCK_VELOCITY: i32 = 100;
 
-    println!("Building output stream...");
+    // Chord configuration
+    const CHORD_CHANNEL: i32 = 0; // Use channel 0 for melodic instruments
+    const CHORD_VELOCITY: i32 = 80;
+
     let synth_clone = synthesizer.clone();
+    let chord_clone = chord.clone();
     let stream = device.build_output_stream(
         &config,
         move |buffer: &mut [f32], _: &cpal::OutputCallbackInfo| {
@@ -125,14 +121,25 @@ pub fn init_stream() -> Result<Stream> {
                 let frame_sample = current_sample + frame as u64;
 
                 if frame_sample >= next_click {
-                    // Trigger woodblock sound
+                    let _ = AUDIO_EVT.0.try_send(AudioEvent::Tick);
+                    let left_over_frames = frame_sample - next_click;
                     let mut synth = synth_clone.lock();
+
+                    // Trigger woodblock sound
                     synth.note_on(WOODBLOCK_CHANNEL, WOODBLOCK_NOTE, WOODBLOCK_VELOCITY);
 
-                    let _ = AUDIO_EVT.0.try_send(AudioEvent::Tick);
+                    // Play chord if one is set
+                    if let Some(ref midi_notes) = *chord_clone.lock() {
+                        for &note in midi_notes {
+                            synth.note_on(CHORD_CHANNEL, note, CHORD_VELOCITY);
+                        }
+                    }
 
                     // Schedule next tick
-                    next_click_sample.store(next_click + samples_per_beat, Ordering::Relaxed);
+                    next_click_sample.store(
+                        next_click + samples_per_beat - left_over_frames,
+                        Ordering::Relaxed,
+                    );
                 }
             }
 
@@ -169,8 +176,18 @@ pub fn init_stream() -> Result<Stream> {
         None,
     )?;
 
-    println!("Stream built, starting playback...");
     stream.play()?;
-    println!("Audio stream initialized and playing!");
     Ok(stream)
+}
+
+fn note_to_midi(semitones_from_c: i32) -> i32 {
+    (semitones_from_c % 12) + 60
+}
+
+fn chord_to_midi(chord: Chord) -> Vec<i32> {
+    chord
+        .to_c_based_semitones()
+        .into_iter()
+        .map(note_to_midi)
+        .collect()
 }

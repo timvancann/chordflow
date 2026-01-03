@@ -1,5 +1,6 @@
 use std::sync::LazyLock;
 
+use chordflow_music_theory::chord::Chord;
 use crossbeam_channel::{bounded, Receiver, Sender};
 use dioxus::desktop::{
     tao::platform::macos::WindowBuilderExtMacOS, Config, LogicalSize, WindowBuilder,
@@ -18,6 +19,7 @@ pub enum AudioCommand {
     SetBPM(u16),
     SetBarsPerCycle(u8),
     SetSubdivision(u8, u8),
+    SetChord(Option<Chord>),
 }
 
 pub enum AudioEvent {

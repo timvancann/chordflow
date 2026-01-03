@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::bottom_zone::{
+use crate::ui::bottom_zone::{
     controls::PlayControls, mode_selector::ModeSelector, quality::CircleOfFourthsQuality,
 };
 

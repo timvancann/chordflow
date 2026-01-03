@@ -1,5 +1,6 @@
-use chordflow_shared::ModeOption;
 use dioxus::prelude::*;
+
+use crate::state::options::ModeOption;
 
 pub fn ModeSelector() -> Element {
     let mut selected_mode_sig = use_context::<Signal<ModeOption>>();
