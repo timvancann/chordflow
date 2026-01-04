@@ -43,12 +43,12 @@ impl PracticeState {
 
     pub fn generate_next_chord(&mut self, chord: Chord, mode: Mode) -> Option<Chord> {
         match mode {
-            Mode::Fourths(_) => {
+            Mode::Fourths(q) => {
                 let mut next_note = chord.root.add_interval(Interval::PerfectFourth);
                 if next_note == Note::new(NoteLetter::G, -1) {
                     next_note = Note::new(NoteLetter::F, 1);
                 }
-                Some(Chord::new(next_note, chord.quality))
+                Some(Chord::new(next_note, q))
             }
             Mode::Random(qualities) => {
                 if qualities.is_empty() {

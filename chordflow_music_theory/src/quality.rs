@@ -43,6 +43,20 @@ impl Quality {
         }
     }
 
+    pub fn from_name(name: &str) -> Quality {
+        match name {
+            "Major" => Quality::Major,
+            "Minor" => Quality::Minor,
+            "Diminished" => Quality::Diminished,
+            "Augmented" => Quality::Augmented,
+            "Dominant" => Quality::Dominant,
+            "Minor Seventh" => Quality::MinorSeventh,
+            "Major Seventh" => Quality::MajorSeventh,
+            "Half Diminished" => Quality::HalfDiminished,
+            _ => Quality::Major,
+        }
+    }
+
     pub fn name(&self) -> String {
         match self {
             Quality::Major => "Major",

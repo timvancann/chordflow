@@ -17,9 +17,9 @@ use crate::{
 #[derive(Debug, PartialEq, Clone)]
 pub enum Mode {
     Fourths(Quality),
+    Diatonic(Scale, DiatonicOption),
     Random(Vec<Quality>),
     Custom(Option<Progression>),
-    Diatonic(Scale, DiatonicOption),
 }
 
 impl Display for Mode {

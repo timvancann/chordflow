@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use chordflow_music_theory::{note::Note, quality::Quality};
 use dioxus::prelude::*;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
@@ -7,10 +8,14 @@ const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 
 use crate::{
-    state::{config::ConfigState, options::ModeOption, practice::PracticeState},
+    state::{
+        config::ConfigState,
+        options::{DiatonicOption, ModeOption},
+        practice::PracticeState,
+    },
     ui::{
         bottom_zone::layout::BottomZone, center_stage::layout::CenterStage,
-        top_zone::layout::TopZone,
+        menu_bar::layout::MenuBar, top_zone::layout::TopZone,
     },
     AudioCommand, AudioEvent, AUDIO_CMD, AUDIO_EVT, INITIAL_BPM,
 };
@@ -56,6 +61,10 @@ impl MetronomeState {
 #[derive(Default)]
 pub struct AppState {
     pub is_playing: bool,
+    pub selected_mode: ModeOption,
+    pub fourths_quality: Quality,
+    pub diatonic_root: Note,
+    pub diatonic_option: DiatonicOption,
 }
 
 #[component]
@@ -126,6 +135,7 @@ pub fn App() -> Element {
             // Ambient glow background
             div { class: "ambient-bg" }
 
+            MenuBar {}
             TopZone {}
             CenterStage {}
             BottomZone {}
