@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Dioxus CLI
+        run: cargo install dioxus-cli
+
+      - name: Build macOS Bundle
+        run: cd chordflow_desktop && dx bundle --release --platform desktop
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Find DMG file
+        id: find_dmg
+        run: |
+          DMG_PATH=$(find target/dx -name "*.dmg" | head -1)
+          DMG_NAME=$(basename "$DMG_PATH")
+          echo "DMG_PATH=$DMG_PATH" >> $GITHUB_OUTPUT
+          echo "DMG_NAME=$DMG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          files: |
+            ${{ steps.find_dmg.outputs.DMG_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

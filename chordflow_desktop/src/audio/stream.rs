@@ -7,11 +7,49 @@ use cpal::{
 use rustysynth::{SoundFont, Synthesizer, SynthesizerSettings};
 use std::{
     fs::File,
+    path::PathBuf,
     sync::{
         atomic::{AtomicBool, AtomicU8, AtomicU16, AtomicU64, Ordering},
         Arc,
     },
 };
+
+/// Find the soundfont file, checking both development and bundled app locations
+fn find_soundfont_path() -> Result<PathBuf> {
+    const SOUNDFONT_NAME: &str = "TimGM6mb.sf2";
+
+    // Try development path first
+    let dev_path = PathBuf::from("assets").join(SOUNDFONT_NAME);
+    if dev_path.exists() {
+        return Ok(dev_path);
+    }
+
+    // Try macOS bundle path: executable is in .app/Contents/MacOS/
+    // Resources are in .app/Contents/Resources/
+    if let Ok(exe_path) = std::env::current_exe() {
+        // Go from MacOS/ to Resources/
+        if let Some(macos_dir) = exe_path.parent() {
+            let resources_dir = macos_dir.parent().map(|p| p.join("Resources"));
+            if let Some(resources) = resources_dir {
+                // Check directly in Resources
+                let bundle_path = resources.join(SOUNDFONT_NAME);
+                if bundle_path.exists() {
+                    return Ok(bundle_path);
+                }
+                // Check in Resources/assets
+                let bundle_assets_path = resources.join("assets").join(SOUNDFONT_NAME);
+                if bundle_assets_path.exists() {
+                    return Ok(bundle_assets_path);
+                }
+            }
+        }
+    }
+
+    Err(anyhow::anyhow!(
+        "Could not find soundfont file '{}' in any expected location",
+        SOUNDFONT_NAME
+    ))
+}
 
 pub fn init_stream() -> Result<Stream> {
     let host = cpal::default_host();
@@ -34,8 +72,9 @@ pub fn init_stream() -> Result<Stream> {
     let current_beat_in_bar: Arc<AtomicU8> = Arc::new(AtomicU8::new(0));
 
     // Load and verify soundfont
-    let mut sf2 = File::open("assets/TimGM6mb.sf2")
-        .map_err(|e| anyhow::anyhow!("Failed to open soundfont file: {}", e))?;
+    let sf2_path = find_soundfont_path()?;
+    let mut sf2 = File::open(&sf2_path)
+        .map_err(|e| anyhow::anyhow!("Failed to open soundfont file at {:?}: {}", sf2_path, e))?;
     let sound_font = Arc::new(
         SoundFont::new(&mut sf2)
             .map_err(|e| anyhow::anyhow!("Failed to parse soundfont: {}", e))?,

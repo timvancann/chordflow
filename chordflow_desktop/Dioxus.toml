@@ -30,4 +30,4 @@ script = []
 resources = ["assets/*"]
 identifier = "io.timnology"
 publisher = "Timnology"
-icon = ["icons/icon-512.png", "icons/Appicon.icns"]
+icon = ["icons/icon-512.png", "icons/AppIcon.icns"]
