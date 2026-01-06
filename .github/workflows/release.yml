@@ -27,6 +27,12 @@ jobs:
       - name: Build macOS Bundle
         run: cd chordflow_desktop && dx bundle --release --platform desktop
 
+      - name: Remove adhoc signature to prevent "damaged" error
+        run: |
+          APP_PATH=$(find target/dx -name "*.app" -path "*/bundle/macos/bundle/macos/*" | head -1)
+          echo "Removing adhoc signature from: $APP_PATH"
+          codesign --remove-signature "$APP_PATH"
+
       - name: Get version from tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
