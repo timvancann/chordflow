@@ -514,7 +514,7 @@ dependencies = [
 
 [[package]]
 name = "chordflow_desktop"
-version = "0.3.3"
+version = "0.4.1"
 dependencies = [
  "anyhow",
  "atomic_float",
