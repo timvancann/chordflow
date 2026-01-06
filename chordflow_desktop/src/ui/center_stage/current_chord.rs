@@ -1,23 +1,14 @@
 use dioxus::prelude::*;
 
-use crate::state::practice::PracticeState;
+use crate::ui::app::AppState;
 
 pub fn CurrentChord() -> Element {
-    let practice_state: Signal<PracticeState> = use_context();
-    let chord = practice_state.read().current_chord;
-    let mut accidendal = "".to_string();
-    if chord.root.accidentals > 0 {
-        accidendal = "♯".repeat(chord.root.accidentals as usize)
-    }
-    if chord.root.accidentals < 0 {
-        accidendal = "♭".repeat(-chord.root.accidentals as usize)
-    };
+    let app_state: Signal<AppState> = use_context();
+    let (chord, _) = app_state.read().get_chords();
 
     rsx! {
         div { class: "current-chord",
-            "{chord.root.letter}"
-            span { class: "accidental", "{accidendal}" }
-            span { class: "quality", "{chord.quality}" }
+            "{chord}"
         }
     }
 }

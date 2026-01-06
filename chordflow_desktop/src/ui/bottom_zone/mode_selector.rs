@@ -1,10 +1,7 @@
 use dioxus::prelude::*;
 use strum::IntoEnumIterator;
 
-use crate::{
-    state::{config::ConfigState, options::ModeOption},
-    ui::app::AppState,
-};
+use crate::{state::modes::ModeOption, ui::app::AppState};
 
 pub fn ModeSelector() -> Element {
     let mut app_state = use_context::<Signal<AppState>>();

@@ -1,18 +1,10 @@
-use chordflow_music_theory::{
-    note::generate_all_roots,
-    scale::{Scale, ScaleType},
-};
+use chordflow_music_theory::note::generate_all_roots;
 use dioxus::prelude::*;
-use strum::IntoEnumIterator;
 
-use crate::{
-    state::{config::ConfigState, mode::Mode, options::DiatonicOption, practice::PracticeState},
-    ui::app::AppState,
-};
+use crate::ui::app::AppState;
 
 pub fn DiatonicSelector() -> Element {
     let mut config_state = use_context::<Signal<AppState>>();
-    let mut practice_state = use_context::<Signal<PracticeState>>();
 
     rsx! {
         div { class: "control-group-right",
@@ -20,39 +12,28 @@ pub fn DiatonicSelector() -> Element {
             span { class: "label-small", "Root" }
             select {
                 class: "select-styled",
-                value: "{config_state.read().diatonic_root}",
+                value: "{config_state.read().diatonic_config.scale.root}",
                 onchange: move |e| {
                     if let Some(root) = generate_all_roots().get(e.value().parse::<usize>().unwrap_or(0)) {
-                        config_state.write().diatonic_root = *root;
-                        practice_state.write().set_mode(Mode::Diatonic(Scale::new(*root, ScaleType::Diatonic), config_state.read().diatonic_option));
+                        config_state.write().diatonic_config.set_root(*root);
                     }
                 },
                 for (i, root) in generate_all_roots().into_iter().enumerate() {
                     option {
                         value: "{i}",
-                        selected: root == config_state.read().diatonic_root,
+                        selected: root == config_state.read().diatonic_config.scale.root,
                         "{root}"
                     }
                 }
             }
 
-            // Diatonic option dropdown (Incremental/Random)
-            span { class: "label-small", "Mode" }
-            select {
-                class: "select-styled",
-                value: "{config_state.read().diatonic_option}",
+            // Random mode checkbox
+            span { class: "label-small", "Random" }
+            input {
+                r#type: "checkbox",
+                checked: config_state.read().diatonic_config.is_random,
                 onchange: move |e| {
-                    if let Some(option) = DiatonicOption::iter().nth(e.value().parse::<usize>().unwrap_or(0)) {
-                        config_state.write().diatonic_option = option;
-                        practice_state.write().set_mode(Mode::Diatonic(Scale::new(config_state.read().diatonic_root, ScaleType::Diatonic), option));
-                    }
-                },
-                for (i, option) in DiatonicOption::iter().enumerate() {
-                    option {
-                        value: "{i}",
-                        selected: option == config_state.read().diatonic_option,
-                        "{option}"
-                    }
+                    config_state.write().diatonic_config.is_random = e.value().parse::<bool>().unwrap_or(false);
                 }
             }
         }

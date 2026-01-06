@@ -1,6 +1,9 @@
 use dioxus::prelude::*;
 use dioxus_free_icons::{
-    icons::fa_solid_icons::{FaPause, FaPlay},
+    icons::{
+        fa_solid_icons::{FaPause, FaPlay},
+        ld_icons::LdUndo,
+    },
     Icon,
 };
 
@@ -9,6 +12,11 @@ use crate::{ui::app::AppState, AudioCommand, AUDIO_CMD};
 pub fn PlayControl() -> Element {
     let mut app_state: Signal<AppState> = use_context();
     rsx! {
+        button {
+            class: "btn-icon btn-large-icon",
+            onclick: move |_| app_state.write().restart(),
+            Icon { width: 20, height: 20, icon: LdUndo }
+        }
         if app_state.read().is_playing {
             button {
                 class: "btn-primary",

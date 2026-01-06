@@ -8,7 +8,21 @@ use chordflow_music_theory::{
 };
 use rand::{rng, seq::IndexedRandom};
 
-use crate::state::{mode::Mode, options::DiatonicOption};
+use crate::state::{mode::Mode, modes::DiatonicOption};
+
+trait PracticeMode {
+    fn generate_next_chord(&mut self) -> String;
+    fn current_chord_str(&self) -> String;
+    fn next_chord_str(&self) -> String;
+}
+
+struct FourthsMode {
+    quality: Quality,
+    current_chord: Chord,
+    next_chord: Chord,
+}
+
+pub fn next_chord<T: PracticeMode>(mode: T) -> String {}
 
 #[derive(PartialEq, Clone)]
 pub struct PracticeState {
@@ -18,6 +32,9 @@ pub struct PracticeState {
     pub next_scale_interval: Interval,
     pub current_progression_chord_idx: usize,
     pub next_progression_chord_idx: usize,
+
+    pub current_chord_repr: String,
+    pub next_chord_repr: String,
 }
 
 impl PracticeState {
@@ -93,45 +110,6 @@ impl PracticeState {
             .generate_next_chord(self.current_chord, self.mode.clone())
             .unwrap();
     }
-}
-
-fn next_diatonic_scale_interval(
-    option: &DiatonicOption,
-    scale: &Scale,
-    current_scale_interval: &Interval,
-) -> Interval {
-    let mut rand = rng();
-    match option {
-        DiatonicOption::Incemental => {
-            let index = scale
-                .intervals
-                .iter()
-                .position(|f| f == current_scale_interval)
-                .unwrap();
-            let next_index = (index + 1) % scale.intervals.len();
-            scale.intervals[next_index]
-        }
-        DiatonicOption::Random => *scale.intervals.choose(&mut rand).unwrap(),
-    }
-}
-
-fn calculate_chord_quality_in_scale(scale: &Scale, interval: &Interval) -> Quality {
-    let new_scale_index = scale.intervals.iter().position(|f| f == interval).unwrap() as i32;
-    let new_chord_indexes: Vec<i32> =
-        vec![new_scale_index, new_scale_index + 2, new_scale_index + 4]
-            .into_iter()
-            .map(|i| normalize(i, 7))
-            .map(|i| scale.intervals[i as usize].to_semitones())
-            .collect();
-    let zero_based_chord_indexes = new_chord_indexes
-        .iter()
-        .map(|i| normalize(i - new_chord_indexes[0], 12))
-        .collect::<Vec<i32>>();
-    Quality::from_intervals(zero_based_chord_indexes)
-}
-
-fn normalize(interval: i32, base: i32) -> i32 {
-    (interval + base) % base
 }
 
 impl Default for PracticeState {

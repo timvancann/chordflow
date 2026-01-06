@@ -1,11 +1,12 @@
 use dioxus::prelude::*;
 
 use crate::{
-    state::options::ModeOption,
+    state::modes::ModeOption,
     ui::{
         app::AppState,
         bottom_zone::{
-            controls::PlayControls, diatonic::DiatonicSelector, quality::CircleOfFourthsQuality,
+            controls::PlayControls, diatonic::DiatonicSelector, fourths::CircleOfFourthsQuality,
+            progression::ProgressionSelector,
         },
     },
 };
@@ -27,6 +28,10 @@ pub fn BottomZone() -> Element {
                     ModeOption::Diatonic => {
                         rsx! { DiatonicSelector {} }
                     }
+                    ModeOption::Custom => {
+                        rsx! { ProgressionSelector {} }
+                    }
+
                     _ => {
                         rsx!{div { class: "control-group-right", }}
                     }

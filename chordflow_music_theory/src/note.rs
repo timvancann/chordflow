@@ -55,6 +55,19 @@ impl NoteLetter {
         }
     }
 
+    pub fn from_semitone(semitone: i32) -> Self {
+        match semitone % 12 {
+            0 => NoteLetter::C,
+            2 => NoteLetter::D,
+            4 => NoteLetter::E,
+            5 => NoteLetter::F,
+            7 => NoteLetter::G,
+            9 => NoteLetter::A,
+            11 => NoteLetter::B,
+            _ => panic!("Invalid semitone"),
+        }
+    }
+
     pub fn from_string(s: &str) -> NoteLetter {
         match s.to_uppercase().as_str() {
             "C" => NoteLetter::C,
@@ -79,10 +92,10 @@ impl Display for Note {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let mut accidendal = "".to_string();
         if self.accidentals > 0 {
-            accidendal = "#".repeat(self.accidentals as usize)
+            accidendal = "♯".repeat(self.accidentals as usize)
         }
         if self.accidentals < 0 {
-            accidendal = "b".repeat(-self.accidentals as usize)
+            accidendal = "♭".repeat(-self.accidentals as usize)
         };
         write!(f, "{}{}", self.letter, accidendal)
     }

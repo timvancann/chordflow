@@ -519,6 +519,7 @@ dependencies = [
  "anyhow",
  "atomic_float",
  "chordflow_music_theory",
+ "chordparser",
  "clap",
  "cpal",
  "crossbeam-channel",
@@ -550,6 +551,17 @@ dependencies = [
  "rand 0.9.0",
  "strum",
  "strum_macros",
+]
+
+[[package]]
+name = "chordparser"
+version = "4.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb7f1d5bd49aff511cbb4b36c4df76b67d5b633484bbd6e78476f7daddf6f9a8"
+dependencies = [
+ "enum-bitset",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1855,6 +1867,27 @@ name = "endi"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3d8a32ae18130a3c84dd492d4215c3d913c3b07c6b63c2eb3eb7ff1101ab7bf"
+
+[[package]]
+name = "enum-bitset"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6dd2b342d06d77746fb960663e6c2a8e2ddb3ada4d4257556b3c5e95b0dbeff"
+dependencies = [
+ "enum-bitset-derive",
+]
+
+[[package]]
+name = "enum-bitset-derive"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03fae91c48e2f1859125007b1f4e4b67a3ceb83d1627801455fa580fe1b14d3d"
+dependencies = [
+ "heck 0.5.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.112",
+]
 
 [[package]]
 name = "enumflags2"
@@ -4306,9 +4339,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.38"
+version = "1.0.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e4dccaaaf89514f546c693ddc140f729f958c247918a13380cccc6078391acc"
+checksum = "a338cc41d27e6cc6dce6cefc13a0729dfbb81c262b1f519331575dd80ef3067f"
 dependencies = [
  "proc-macro2",
 ]

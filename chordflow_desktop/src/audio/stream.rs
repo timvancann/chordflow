@@ -28,7 +28,7 @@ pub fn init_stream() -> Result<Stream> {
     let is_playing: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
     let sample_counter = Arc::new(AtomicU64::new(0));
     let next_click_sample = Arc::new(AtomicU64::new(0));
-    let chord: Arc<parking_lot::Mutex<Option<Vec<i32>>>> = Arc::new(parking_lot::Mutex::new(None));
+    let chord: Arc<parking_lot::Mutex<Option<Vec<u8>>>> = Arc::new(parking_lot::Mutex::new(None));
 
     // Load and verify soundfont
     let mut sf2 = File::open("assets/TimGM6mb.sf2")
@@ -69,10 +69,9 @@ pub fn init_stream() -> Result<Stream> {
                     AudioCommand::SetBPM(new_bpm) => {
                         bpm_cmd.store(new_bpm, Ordering::Relaxed);
                     }
-                    AudioCommand::SetChord(new_chord) => {
-                        if let Some(chord) = new_chord {
-                            let midi_notes = chord_to_midi(chord);
-                            *chord_cmd.lock() = Some(midi_notes);
+                    AudioCommand::SetChord(midi_notes) => {
+                        if let Some(notes) = midi_notes {
+                            *chord_cmd.lock() = Some(notes);
                         } else {
                             *chord_cmd.lock() = None;
                         }
@@ -131,7 +130,7 @@ pub fn init_stream() -> Result<Stream> {
                     // Play chord if one is set
                     if let Some(ref midi_notes) = *chord_clone.lock() {
                         for &note in midi_notes {
-                            synth.note_on(CHORD_CHANNEL, note, CHORD_VELOCITY);
+                            synth.note_on(CHORD_CHANNEL, note as i32, CHORD_VELOCITY);
                         }
                     }
 
@@ -178,16 +177,4 @@ pub fn init_stream() -> Result<Stream> {
 
     stream.play()?;
     Ok(stream)
-}
-
-fn note_to_midi(semitones_from_c: i32) -> i32 {
-    (semitones_from_c % 12) + 60
-}
-
-fn chord_to_midi(chord: Chord) -> Vec<i32> {
-    chord
-        .to_c_based_semitones()
-        .into_iter()
-        .map(note_to_midi)
-        .collect()
 }

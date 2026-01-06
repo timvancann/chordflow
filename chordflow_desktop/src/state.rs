@@ -1,4 +1,4 @@
-pub mod config;
-pub mod mode;
-pub mod options;
-pub mod practice;
+pub mod diatonic;
+pub mod fourths;
+pub mod modes;
+pub mod progression;

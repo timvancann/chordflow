@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use chordflow_music_theory::{note::Note, quality::Quality};
+use chordflow_music_theory::chord::Chord;
 use dioxus::prelude::*;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
@@ -9,9 +9,8 @@ const MAIN_CSS: Asset = asset!("/assets/main.css");
 
 use crate::{
     state::{
-        config::ConfigState,
-        options::{DiatonicOption, ModeOption},
-        practice::PracticeState,
+        diatonic::DiatonicConfig, fourths::FourthsConfig, modes::ModeOption,
+        progression::ProgressionConfig,
     },
     ui::{
         bottom_zone::layout::BottomZone, center_stage::layout::CenterStage,
@@ -62,34 +61,131 @@ impl MetronomeState {
 pub struct AppState {
     pub is_playing: bool,
     pub selected_mode: ModeOption,
-    pub fourths_quality: Quality,
-    pub diatonic_root: Note,
-    pub diatonic_option: DiatonicOption,
+    pub fourths_config: FourthsConfig,
+    pub diatonic_config: DiatonicConfig,
+    pub progression_config: ProgressionConfig,
+}
+
+impl AppState {
+    pub fn get_chords(&self) -> (String, String) {
+        match self.selected_mode {
+            ModeOption::Fourths => {
+                let (current_chord, next_chord) = self.fourths_config.get_chords();
+                (current_chord, next_chord)
+            }
+            ModeOption::Diatonic => {
+                let (current_chord, next_chord) = self.diatonic_config.get_chords();
+                (current_chord, next_chord)
+            }
+            ModeOption::Custom => {
+                let (current_chord, next_chord) = self.progression_config.get_chords();
+                (current_chord, next_chord)
+            }
+            _ => ("".to_string(), "".to_string()),
+        }
+    }
+
+    pub fn get_midi_codes_for_chords(&self) -> (Vec<u8>, Vec<u8>) {
+        match self.selected_mode {
+            ModeOption::Fourths => (
+                chord_to_midi(self.fourths_config.current_chord),
+                chord_to_midi(self.fourths_config.next_chord),
+            ),
+            ModeOption::Diatonic => (
+                chord_to_midi(self.diatonic_config.current_chord),
+                chord_to_midi(self.diatonic_config.next_chord),
+            ),
+            ModeOption::Custom => (
+                self.progression_config
+                    .current_chord
+                    .clone()
+                    .map(|c| c.to_midi_codes())
+                    .unwrap_or_default(),
+                self.progression_config
+                    .next_chord
+                    .clone()
+                    .map(|c| c.to_midi_codes())
+                    .unwrap_or_default(),
+            ),
+
+            _ => (vec![], vec![]),
+        }
+    }
+
+    pub fn advance(&mut self) {
+        match self.selected_mode {
+            ModeOption::Fourths => {
+                self.fourths_config.generate_next_chord();
+            }
+            ModeOption::Diatonic => {
+                self.diatonic_config.generate_next_chord();
+            }
+            ModeOption::Custom => {
+                self.progression_config.generate_next_chord();
+                let mut metronome_state: Signal<MetronomeState> = use_context();
+                metronome_state.write().bars_per_chord =
+                    self.progression_config.get_bars_per_cycle_current();
+            }
+
+            _ => {}
+        }
+    }
+
+    pub fn restart(&mut self) {
+        match self.selected_mode {
+            ModeOption::Fourths => {
+                self.fourths_config.reset();
+            }
+            ModeOption::Diatonic => {
+                self.diatonic_config.reset();
+            }
+            ModeOption::Custom => {
+                self.progression_config.reset();
+                let mut metronome_state: Signal<MetronomeState> = use_context();
+                metronome_state.write().bars_per_chord =
+                    self.progression_config.get_bars_per_cycle_current();
+            }
+
+            _ => {}
+        }
+        self.metronome_restart();
+        // self.is_playing = false;
+    }
+
+    fn metronome_restart(&self) {
+        let _ = AUDIO_CMD.0.try_send(AudioCommand::SetChord(Some(
+            self.get_midi_codes_for_chords().0,
+        )));
+        let mut metronome_state: Signal<MetronomeState> = use_context();
+        metronome_state.write().current_bar = 1;
+        metronome_state.write().current_tick = 0;
+        // let _ = AUDIO_CMD.0.try_send(AudioCommand::Stop);
+    }
 }
 
 #[component]
 pub fn App() -> Element {
     let selected_mode = use_signal(|| ModeOption::Fourths);
-    let config_state = use_signal(ConfigState::default);
-    let app_state = use_signal(AppState::default);
-    let mut practice_state = use_signal(PracticeState::default);
+    let mut app_state = use_signal(AppState::default);
     let mut metronome_state = use_signal(MetronomeState::default);
 
-    // let _audio_engine = use_signal(|| setup_audio(default_metronome_state, None).expect("Failed to setup audio"));
-
-    use_context_provider(|| practice_state);
     use_context_provider(|| selected_mode);
-    use_context_provider(|| config_state);
-
-    // use_metronome(metronome_state, practice_state);
     use_context_provider(|| app_state);
-    use_context_provider(|| practice_state);
     use_context_provider(|| metronome_state);
 
     use_future(move || async move {
         let _ = AUDIO_CMD.0.try_send(AudioCommand::SetChord(Some(
-            practice_state.read().current_chord,
+            app_state.read().get_midi_codes_for_chords().0,
         )));
+    });
+
+    use_effect(move || {
+        let _ = AUDIO_CMD.0.try_send(AudioCommand::SetBarsPerCycle(
+            metronome_state.read().bars_per_chord,
+        ));
+        let _ = AUDIO_CMD
+            .0
+            .try_send(AudioCommand::SetBPM(metronome_state.read().bpm));
     });
 
     let _ = use_future(move || async move {
@@ -99,7 +195,7 @@ pub fn App() -> Element {
                     AudioEvent::Tick => {
                         let cycle_done = metronome_state.write().tick();
                         if cycle_done {
-                            practice_state.write().next_chord();
+                            app_state.write().advance();
                         }
 
                         let state = metronome_state.read();
@@ -107,11 +203,11 @@ pub fn App() -> Element {
                         if state.current_tick + 1 > state.ticks_per_bar {
                             if state.current_bar + 1 > state.bars_per_chord {
                                 let _ = AUDIO_CMD.0.try_send(AudioCommand::SetChord(Some(
-                                    practice_state.read().next_chord,
+                                    app_state.read().get_midi_codes_for_chords().1,
                                 )));
                             } else {
                                 let _ = AUDIO_CMD.0.try_send(AudioCommand::SetChord(Some(
-                                    practice_state.read().current_chord,
+                                    app_state.read().get_midi_codes_for_chords().0,
                                 )));
                             }
                         } else {
@@ -141,4 +237,16 @@ pub fn App() -> Element {
             BottomZone {}
         }
     }
+}
+
+pub fn chord_to_midi(chord: Chord) -> Vec<u8> {
+    chord
+        .to_c_based_semitones()
+        .into_iter()
+        .map(note_to_midi)
+        .collect()
+}
+
+pub fn note_to_midi(semitones_from_c: i32) -> u8 {
+    ((semitones_from_c % 12) + 60) as u8
 }

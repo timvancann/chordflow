@@ -9,7 +9,6 @@ use dioxus::desktop::{
 use crate::{audio::stream::init_stream, ui::app::App};
 
 mod audio;
-mod progression;
 mod state;
 mod ui;
 
@@ -19,7 +18,7 @@ pub enum AudioCommand {
     SetBPM(u16),
     SetBarsPerCycle(u8),
     SetSubdivision(u8, u8),
-    SetChord(Option<Chord>),
+    SetChord(Option<Vec<u8>>),
 }
 
 pub enum AudioEvent {

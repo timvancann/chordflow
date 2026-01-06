@@ -10,6 +10,7 @@ default-run = "chordflow_desktop"
 anyhow = "1.0.95"
 atomic_float = "1.1"
 chordflow_music_theory = {path = "../chordflow_music_theory/"}
+chordparser = "4.0.4"
 clap = { version = "4.5.27", features = ["derive"] }
 cpal = "0.15.3"
 crossbeam-channel = "0.5.15"
