@@ -15,6 +15,7 @@ use crate::{
     ui::{
         bottom_zone::layout::BottomZone, center_stage::layout::CenterStage,
         menu_bar::layout::MenuBar, top_zone::layout::TopZone,
+        top_zone::subdivision_selector::Subdivision,
     },
     AudioCommand, AudioEvent, AUDIO_CMD, AUDIO_EVT, INITIAL_BPM,
 };
@@ -25,6 +26,7 @@ pub struct MetronomeState {
     pub bpm: u16,
     pub current_bar: u8,
     pub current_tick: u8,
+    pub subdivision: Subdivision,
 }
 
 impl Default for MetronomeState {
@@ -35,6 +37,7 @@ impl Default for MetronomeState {
             bpm: INITIAL_BPM,
             current_bar: 1,
             current_tick: 0,
+            subdivision: Subdivision::default(),
         }
     }
 }
@@ -159,7 +162,8 @@ impl AppState {
         let mut metronome_state: Signal<MetronomeState> = use_context();
         metronome_state.write().current_bar = 1;
         metronome_state.write().current_tick = 0;
-        // let _ = AUDIO_CMD.0.try_send(AudioCommand::Stop);
+        // Send restart to audio stream to sync counters
+        let _ = AUDIO_CMD.0.try_send(AudioCommand::Restart);
     }
 }
 
@@ -223,8 +227,14 @@ pub fn App() -> Element {
     let mut toggle_play = move || {
         if app_state.read().is_playing {
             app_state.write().is_playing = false;
+            // Reset UI state on stop
+            metronome_state.write().current_bar = 1;
+            metronome_state.write().current_tick = 0;
             let _ = AUDIO_CMD.0.try_send(AudioCommand::Stop);
         } else {
+            // Reset UI state on start
+            metronome_state.write().current_bar = 1;
+            metronome_state.write().current_tick = 0;
             app_state.write().is_playing = true;
             let _ = AUDIO_CMD.0.try_send(AudioCommand::Start);
         }

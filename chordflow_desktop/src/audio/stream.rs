@@ -1,6 +1,5 @@
 use crate::{AudioCommand, AudioEvent, AUDIO_CMD, AUDIO_EVT};
 use anyhow::Result;
-use chordflow_music_theory::chord::Chord;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Stream,
@@ -9,7 +8,7 @@ use rustysynth::{SoundFont, Synthesizer, SynthesizerSettings};
 use std::{
     fs::File,
     sync::{
-        atomic::{AtomicBool, AtomicU16, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU8, AtomicU16, AtomicU64, Ordering},
         Arc,
     },
 };
@@ -29,6 +28,10 @@ pub fn init_stream() -> Result<Stream> {
     let sample_counter = Arc::new(AtomicU64::new(0));
     let next_click_sample = Arc::new(AtomicU64::new(0));
     let chord: Arc<parking_lot::Mutex<Option<Vec<u8>>>> = Arc::new(parking_lot::Mutex::new(None));
+    let subdivisions_per_beat: Arc<AtomicU8> = Arc::new(AtomicU8::new(1));
+    let current_subdivision: Arc<AtomicU8> = Arc::new(AtomicU8::new(0));
+    let ticks_per_bar: Arc<AtomicU8> = Arc::new(AtomicU8::new(4));
+    let current_beat_in_bar: Arc<AtomicU8> = Arc::new(AtomicU8::new(0));
 
     // Load and verify soundfont
     let mut sf2 = File::open("assets/TimGM6mb.sf2")
@@ -51,6 +54,9 @@ pub fn init_stream() -> Result<Stream> {
     let next_click_sample_cmd = next_click_sample.clone();
     let sample_counter_cmd = sample_counter.clone();
     let chord_cmd = chord.clone();
+    let subdivisions_per_beat_cmd = subdivisions_per_beat.clone();
+    let current_subdivision_cmd = current_subdivision.clone();
+    let current_beat_in_bar_cmd = current_beat_in_bar.clone();
 
     // Spawn a dedicated thread to handle audio commands
     std::thread::spawn(move || {
@@ -58,16 +64,44 @@ pub fn init_stream() -> Result<Stream> {
             while let Ok(cmd) = AUDIO_CMD.1.try_recv() {
                 match cmd {
                     AudioCommand::Start => {
-                        is_playing_cmd.store(true, Ordering::Relaxed);
-                        // Schedule first tick immediately using current sample counter
+                        // Reset all counters to start of bar
+                        current_subdivision_cmd.store(0, Ordering::Relaxed);
+                        current_beat_in_bar_cmd.store(0, Ordering::Relaxed);
+                        // Schedule first tick immediately
                         let current = sample_counter_cmd.load(Ordering::Relaxed);
                         next_click_sample_cmd.store(current, Ordering::Relaxed);
+                        // Start playing
+                        is_playing_cmd.store(true, Ordering::Relaxed);
                     }
                     AudioCommand::Stop => {
                         is_playing_cmd.store(false, Ordering::Relaxed);
+                        // Reset counters so next start is clean
+                        current_subdivision_cmd.store(0, Ordering::Relaxed);
+                        current_beat_in_bar_cmd.store(0, Ordering::Relaxed);
+                    }
+                    AudioCommand::Restart => {
+                        // Reset all counters to start of bar
+                        current_subdivision_cmd.store(0, Ordering::Relaxed);
+                        current_beat_in_bar_cmd.store(0, Ordering::Relaxed);
+                        // Schedule next tick immediately if playing
+                        if is_playing_cmd.load(Ordering::Relaxed) {
+                            let current = sample_counter_cmd.load(Ordering::Relaxed);
+                            next_click_sample_cmd.store(current, Ordering::Relaxed);
+                        }
                     }
                     AudioCommand::SetBPM(new_bpm) => {
                         bpm_cmd.store(new_bpm, Ordering::Relaxed);
+                    }
+                    AudioCommand::SetSubdivision(subdivs) => {
+                        subdivisions_per_beat_cmd.store(subdivs, Ordering::Relaxed);
+                        // Reset counters to start of bar when changing subdivision
+                        current_subdivision_cmd.store(0, Ordering::Relaxed);
+                        current_beat_in_bar_cmd.store(0, Ordering::Relaxed);
+                        // Reschedule next tick immediately if playing
+                        if is_playing_cmd.load(Ordering::Relaxed) {
+                            let current = sample_counter_cmd.load(Ordering::Relaxed);
+                            next_click_sample_cmd.store(current, Ordering::Relaxed);
+                        }
                     }
                     AudioCommand::SetChord(midi_notes) => {
                         if let Some(notes) = midi_notes {
@@ -84,10 +118,19 @@ pub fn init_stream() -> Result<Stream> {
         }
     });
 
-    // Woodblock is typically on MIDI channel 10 (percussion), note 76
-    const WOODBLOCK_CHANNEL: i32 = 9; // MIDI channels are 0-indexed, channel 10 = index 9
-    const WOODBLOCK_NOTE: i32 = 76;
-    const WOODBLOCK_VELOCITY: i32 = 100;
+    // Percussion channel (MIDI channel 10 = index 9)
+    const PERCUSSION_CHANNEL: i32 = 9;
+
+    // Different click sounds for different beat types
+    // Using woodblock and sidestick sounds from General MIDI percussion
+    const CLICK_ACCENT: i32 = 76;     // Hi wood block - for downbeat (first beat of bar)
+    const CLICK_NORMAL: i32 = 77;     // Low wood block - for regular beats
+    const CLICK_SUBDIVISION: i32 = 37; // Side stick - for subdivisions
+
+    // Velocities for different beat types
+    const VELOCITY_ACCENT: i32 = 120;
+    const VELOCITY_NORMAL: i32 = 100;
+    const VELOCITY_SUBDIVISION: i32 = 70;
 
     // Chord configuration
     const CHORD_CHANNEL: i32 = 0; // Use channel 0 for melodic instruments
@@ -108,35 +151,70 @@ pub fn init_stream() -> Result<Stream> {
             }
 
             let current_bpm = bpm.load(Ordering::Relaxed);
+            let subdivs = subdivisions_per_beat.load(Ordering::Relaxed) as u64;
 
             // How many frames (multi-channel sample groups) we must fill in this callback
             let frames = buffer.len() / channels;
 
-            // Calculate samples per beat
+            // Calculate samples per beat and per subdivision
             let samples_per_beat = (sample_rate as f64 * 60.0 / current_bpm as f64) as u64;
+            let samples_per_subdivision = samples_per_beat / subdivs;
 
             for frame in 0..frames {
                 let next_click = next_click_sample.load(Ordering::Relaxed);
                 let frame_sample = current_sample + frame as u64;
 
                 if frame_sample >= next_click {
-                    let _ = AUDIO_EVT.0.try_send(AudioEvent::Tick);
                     let left_over_frames = frame_sample - next_click;
                     let mut synth = synth_clone.lock();
 
-                    // Trigger woodblock sound
-                    synth.note_on(WOODBLOCK_CHANNEL, WOODBLOCK_NOTE, WOODBLOCK_VELOCITY);
+                    // Get current subdivision within the beat (0 = main beat)
+                    let curr_subdiv = current_subdivision.load(Ordering::Relaxed);
+                    let curr_beat = current_beat_in_bar.load(Ordering::Relaxed);
 
-                    // Play chord if one is set
-                    if let Some(ref midi_notes) = *chord_clone.lock() {
-                        for &note in midi_notes {
-                            synth.note_on(CHORD_CHANNEL, note as i32, CHORD_VELOCITY);
+                    // Determine which sound to play
+                    let (note, velocity) = if curr_subdiv == 0 {
+                        // This is a main beat
+                        if curr_beat == 0 {
+                            // First beat of bar - accent
+                            (CLICK_ACCENT, VELOCITY_ACCENT)
+                        } else {
+                            // Regular beat
+                            (CLICK_NORMAL, VELOCITY_NORMAL)
+                        }
+                    } else {
+                        // This is a subdivision
+                        (CLICK_SUBDIVISION, VELOCITY_SUBDIVISION)
+                    };
+
+                    // Trigger click sound
+                    synth.note_on(PERCUSSION_CHANNEL, note, velocity);
+
+                    // Only send Tick event and play chord on main beats (not subdivisions)
+                    if curr_subdiv == 0 {
+                        let _ = AUDIO_EVT.0.try_send(AudioEvent::Tick);
+
+                        // Play chord if one is set
+                        if let Some(ref midi_notes) = *chord_clone.lock() {
+                            for &note in midi_notes {
+                                synth.note_on(CHORD_CHANNEL, note as i32, CHORD_VELOCITY);
+                            }
                         }
                     }
 
-                    // Schedule next tick
+                    // Advance subdivision counter
+                    let next_subdiv = (curr_subdiv + 1) % subdivs as u8;
+                    current_subdivision.store(next_subdiv, Ordering::Relaxed);
+
+                    // If we've completed all subdivisions, advance beat counter
+                    if next_subdiv == 0 {
+                        let next_beat = (curr_beat + 1) % ticks_per_bar.load(Ordering::Relaxed);
+                        current_beat_in_bar.store(next_beat, Ordering::Relaxed);
+                    }
+
+                    // Schedule next click (subdivision or main beat)
                     next_click_sample.store(
-                        next_click + samples_per_beat - left_over_frames,
+                        next_click + samples_per_subdivision - left_over_frames,
                         Ordering::Relaxed,
                     );
                 }

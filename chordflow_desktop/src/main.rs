@@ -15,9 +15,10 @@ mod ui;
 pub enum AudioCommand {
     Start,
     Stop,
+    Restart,
     SetBPM(u16),
     SetBarsPerCycle(u8),
-    SetSubdivision(u8, u8),
+    SetSubdivision(u8),
     SetChord(Option<Vec<u8>>),
 }
 

@@ -7,10 +7,12 @@ use dioxus_free_icons::{
     Icon,
 };
 
-use crate::{ui::app::AppState, AudioCommand, AUDIO_CMD};
+use crate::{ui::app::{AppState, MetronomeState}, AudioCommand, AUDIO_CMD};
 
 pub fn PlayControl() -> Element {
     let mut app_state: Signal<AppState> = use_context();
+    let mut metronome_state: Signal<MetronomeState> = use_context();
+
     rsx! {
         button {
             class: "btn-icon btn-large-icon",
@@ -22,6 +24,9 @@ pub fn PlayControl() -> Element {
                 class: "btn-primary",
                 onclick: move |_| {
                     app_state.write().is_playing = false;
+                    // Reset UI state on stop
+                    metronome_state.write().current_bar = 1;
+                    metronome_state.write().current_tick = 0;
                     let _ = AUDIO_CMD.0.try_send(AudioCommand::Stop);
                 },
                 Icon { icon: FaPause }
@@ -30,6 +35,9 @@ pub fn PlayControl() -> Element {
             button {
                 class: "btn-icon btn-large-icon",
                 onclick: move |_| {
+                    // Reset UI state on start
+                    metronome_state.write().current_bar = 1;
+                    metronome_state.write().current_tick = 0;
                     app_state.write().is_playing = true;
                     let _ = AUDIO_CMD.0.try_send(AudioCommand::Start);
                 },
