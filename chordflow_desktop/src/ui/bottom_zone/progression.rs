@@ -3,7 +3,6 @@ use dioxus::prelude::*;
 use crate::{
     state::progression::ProgressionChord,
     ui::app::{AppState, MetronomeState},
-    AudioCommand, AUDIO_CMD,
 };
 
 pub fn ProgressionSelector() -> Element {
@@ -12,7 +11,7 @@ pub fn ProgressionSelector() -> Element {
     let mut input_value = use_signal(String::new);
     let mut parse_error = use_signal(|| Option::<String>::None);
 
-    let handle_parse = move |_| {
+    let mut parse_progression = move || {
         let input = input_value.read().clone();
         match ProgressionChord::from_string(input) {
             Ok(chords) => {
@@ -40,11 +39,16 @@ pub fn ProgressionSelector() -> Element {
                     r#type: "text",
                     placeholder: "Fm7, G#dim",
                     value: "{input_value}",
-                    oninput: move |e| input_value.set(e.value())
+                    oninput: move |e| input_value.set(e.value()),
+                    onkeydown: move |e| {
+                        if e.key() == Key::Enter {
+                            parse_progression();
+                        }
+                    }
                 }
                 button {
                     class: "btn-parse-inline",
-                    onclick: handle_parse,
+                    onclick: move |_| parse_progression(),
                     "↵"
                 }
             }

@@ -220,6 +220,16 @@ pub fn App() -> Element {
         }
     });
 
+    let mut toggle_play = move || {
+        if app_state.read().is_playing {
+            app_state.write().is_playing = false;
+            let _ = AUDIO_CMD.0.try_send(AudioCommand::Stop);
+        } else {
+            app_state.write().is_playing = true;
+            let _ = AUDIO_CMD.0.try_send(AudioCommand::Start);
+        }
+    };
+
     rsx! {
         // Global app resources
         document::Link { rel: "icon", href: FAVICON }
@@ -227,7 +237,16 @@ pub fn App() -> Element {
         document::Link { rel: "stylesheet", href: MAIN_CSS }
 
 
-        div { class: "app-container",
+        div {
+            class: "app-container",
+            tabindex: 0,
+            onkeydown: move |e| {
+                match e.key() {
+                    Key::Character(c) if c == " " => toggle_play(),
+                    Key::Character(c) if c.to_lowercase() == "r" => app_state.write().restart(),
+                    _ => {}
+                }
+            },
             // Ambient glow background
             div { class: "ambient-bg" }
 

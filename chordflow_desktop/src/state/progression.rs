@@ -30,8 +30,9 @@ impl ProgressionConfig {
 
     pub fn generate_next_chord(&mut self) {
         self.current_chord = self.next_chord.clone();
-        self.next_chord = Some(self.chords[self.current_chord_index].chord.clone());
         self.current_chord_index = (self.current_chord_index + 1) % self.chords.len();
+        let next_index = (self.current_chord_index + 1) % self.chords.len();
+        self.next_chord = Some(self.chords[next_index].chord.clone());
     }
 
     pub fn decrements_bars(&mut self, index: usize) {

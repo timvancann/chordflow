@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap");
 
 :root {
     --bg-color: #0a0a0a;
@@ -44,6 +44,59 @@ body {
     filter: blur(100px);
     pointer-events: none;
     z-index: 0;
+}
+
+/* Menu Bar */
+.menu-bar {
+    position: relative;
+    width: 100%;
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 64px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(10, 10, 10, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.menu-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.menu-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.settings-button {
+    background: transparent;
+    border: 1px solid var(--border-control);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    font-family: var(--font-main);
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-button:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.mode-selector-menu {
+    display: flex;
+    align-items: center;
 }
 
 /* Zone Layouts */
@@ -109,18 +162,6 @@ body {
     filter: drop-shadow(0 4px 24px rgba(0, 0, 0, 0.5));
 }
 
-.current-chord .accidental {
-    font-size: 0.35em;
-    vertical-align: super;
-    font-weight: 600;
-}
-
-.current-chord .quality {
-    font-size: 0.5em;
-    font-weight: 400;
-    opacity: 0.9;
-}
-
 .next-chord-row {
     display: flex;
     align-items: center;
@@ -136,25 +177,18 @@ body {
     letter-spacing: -0.02em;
 }
 
-.next-chord .accidental {
-    font-size: 0.35em;
-    vertical-align: super;
-    font-weight: 500;
-}
-
 .separator-line {
     width: 32px;
     height: 1px;
 }
 
 .separator-left {
-    background: linear-gradient(to right, transparent, rgba(255, 140, 50, 0.3))
+    background: linear-gradient(to right, transparent, rgba(255, 140, 50, 0.3));
 }
 
 .separator-right {
     background: linear-gradient(to left, transparent, rgba(255, 140, 50, 0.3));
 }
-
 
 /* Metronome Components */
 .bar-counter {
@@ -233,7 +267,7 @@ body {
     color: var(--text-primary);
     font-weight: 300;
     letter-spacing: -0.02em;
-    min-width: 2.0em;
+    min-width: 2em;
     text-align: right;
     font-variant-numeric: tabular-nums;
 }
@@ -346,6 +380,179 @@ body {
     border-color: rgba(255, 255, 255, 0.2);
 }
 
+/* Checkbox */
+input[type="checkbox"] {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: 1px solid var(--border-control);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s;
+}
+
+input[type="checkbox"]:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+input[type="checkbox"]:checked {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid #000;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Progression Selector */
+.progression-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.progression-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.progression-input {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--border-control);
+    border-radius: 4px;
+    color: var(--text-primary);
+    padding: 12px 56px 12px 16px;
+    font-family: var(--font-main);
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+}
+
+.progression-input::placeholder {
+    color: var(--text-muted);
+}
+
+.progression-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 1px var(--accent-color);
+}
+
+.btn-parse-inline {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--border-control);
+    border-radius: 2px;
+    color: var(--text-secondary);
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-parse-inline:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.parse-error {
+    color: #ff4444;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 8px 16px;
+    background: rgba(255, 68, 68, 0.1);
+    border: 1px solid rgba(255, 68, 68, 0.3);
+    border-radius: 4px;
+}
+
+.progression-chords {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+}
+
+.chord-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-control);
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.chord-card.active {
+    background: rgba(0, 217, 255, 0.1);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+}
+
+.chord-name {
+    font-family: var(--font-main);
+    font-size: 32px;
+    font-weight: 400;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.chord-card.active .chord-name {
+    color: var(--accent-color);
+}
+
+.bars-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bars-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-secondary);
+    min-width: 40px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.btn-small {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+}
+
+.chord-arrow {
+    font-size: 24px;
+    color: var(--text-muted);
+}
+
 /* Mode Selector */
 .mode-selector {
     display: flex;
@@ -360,7 +567,6 @@ body {
     border: 1px solid var(--border-control);
     border-radius: 4px;
     padding: 4px;
-    height: 36px;
 }
 
 .segment {
