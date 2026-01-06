@@ -1,6 +1,5 @@
 use std::sync::LazyLock;
 
-use chordflow_music_theory::chord::Chord;
 use crossbeam_channel::{bounded, Receiver, Sender};
 use dioxus::desktop::{
     tao::platform::macos::WindowBuilderExtMacOS, Config, LogicalSize, WindowBuilder,
@@ -42,6 +41,15 @@ pub static METRONOME_EVT: LazyLock<(Sender<MetronomeEvent>, Receiver<MetronomeEv
     LazyLock::new(|| bounded(64));
 
 fn main() {
+    // Set up logging to file so we can debug bundled app issues
+    if let Err(e) = setup_logging() {
+        eprintln!("Failed to set up logging: {}", e);
+    }
+
+    log::info!("Starting ChordFlow...");
+    log::info!("Current working directory: {:?}", std::env::current_dir());
+    log::info!("Executable path: {:?}", std::env::current_exe());
+
     let window_builder = WindowBuilder::new()
         .with_transparent(false)
         .with_decorations(true)
@@ -58,12 +66,62 @@ fn main() {
 
     let config = Config::default().with_window(window_builder);
 
-    println!("Initializing audio system...");
+    log::info!("Initializing audio system...");
     // Initialize and leak the audio stream to keep it alive for the application lifetime
-    let stream = init_stream().expect("Failed to initialize audio stream");
-    println!("Audio stream created, leaking to keep alive...");
+    let stream = match init_stream() {
+        Ok(s) => s,
+        Err(e) => {
+            log::error!("Failed to initialize audio stream: {}", e);
+            show_error_dialog(&format!("Failed to initialize audio system:\n\n{}", e));
+            std::process::exit(1);
+        }
+    };
+    log::info!("Audio stream created, leaking to keep alive...");
     Box::leak(Box::new(stream));
 
-    println!("Launching Dioxus application...");
+    log::info!("Launching Dioxus application...");
     dioxus::LaunchBuilder::new().with_cfg(config).launch(App)
+}
+
+fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
+    use std::fs::OpenOptions;
+
+    // Try to create log file in a writable location
+    let log_path = if let Some(home) = std::env::var_os("HOME") {
+        std::path::PathBuf::from(home).join("Library/Logs/ChordFlow.log")
+    } else {
+        std::path::PathBuf::from("/tmp/chordflow.log")
+    };
+
+    let log_file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)?;
+
+    env_logger::Builder::from_default_env()
+        .target(env_logger::Target::Pipe(Box::new(log_file)))
+        .filter_level(log::LevelFilter::Info)
+        .init();
+
+    Ok(())
+}
+
+fn show_error_dialog(message: &str) {
+    // Use native macOS dialog
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        let _ = Command::new("osascript")
+            .arg("-e")
+            .arg(format!(
+                r#"display dialog "{}" buttons {{"OK"}} default button "OK" with icon stop with title "ChordFlow Error""#,
+                message.replace('"', "\\\"").replace('\n', "\\n")
+            ))
+            .output();
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        eprintln!("ERROR: {}", message);
+    }
 }

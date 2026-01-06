@@ -4,6 +4,7 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Stream,
 };
+use dioxus::prelude::*;
 use rustysynth::{SoundFont, Synthesizer, SynthesizerSettings};
 use std::{
     fs::File,
@@ -14,41 +15,63 @@ use std::{
     },
 };
 
-/// Find the soundfont file, checking both development and bundled app locations
-fn find_soundfont_path() -> Result<PathBuf> {
+// Bundle the soundfont file using Dioxus asset system
+const SOUNDFONT_ASSET: Asset = asset!("/assets/TimGM6mb.sf2");
+
+/// Get the soundfont file path
+/// Note: We use asset!() macro above to ensure the file is bundled,
+/// but we need to locate the actual file on disk for rustysynth
+fn get_soundfont_path() -> Result<PathBuf> {
     const SOUNDFONT_NAME: &str = "TimGM6mb.sf2";
+
+    log::info!("Searching for soundfont file: {}", SOUNDFONT_NAME);
+    log::info!("Current directory: {:?}", std::env::current_dir());
 
     // Try development path first
     let dev_path = PathBuf::from("assets").join(SOUNDFONT_NAME);
+    log::info!("Checking dev path: {:?}", dev_path);
     if dev_path.exists() {
+        log::info!("Found soundfont at dev path: {:?}", dev_path);
         return Ok(dev_path);
     }
 
     // Try macOS bundle path: executable is in .app/Contents/MacOS/
     // Resources are in .app/Contents/Resources/
     if let Ok(exe_path) = std::env::current_exe() {
+        log::info!("Executable path: {:?}", exe_path);
+
         // Go from MacOS/ to Resources/
         if let Some(macos_dir) = exe_path.parent() {
+            log::info!("MacOS dir: {:?}", macos_dir);
             let resources_dir = macos_dir.parent().map(|p| p.join("Resources"));
             if let Some(resources) = resources_dir {
-                // Check directly in Resources
+                log::info!("Resources dir: {:?}", resources);
+
+                // Check directly in Resources (where Dioxus bundles it)
                 let bundle_path = resources.join(SOUNDFONT_NAME);
+                log::info!("Checking bundle path: {:?}", bundle_path);
                 if bundle_path.exists() {
+                    log::info!("Found soundfont at: {:?}", bundle_path);
                     return Ok(bundle_path);
                 }
+
                 // Check in Resources/assets
                 let bundle_assets_path = resources.join("assets").join(SOUNDFONT_NAME);
+                log::info!("Checking bundle assets path: {:?}", bundle_assets_path);
                 if bundle_assets_path.exists() {
+                    log::info!("Found soundfont at: {:?}", bundle_assets_path);
                     return Ok(bundle_assets_path);
                 }
             }
         }
     }
 
-    Err(anyhow::anyhow!(
+    let error_msg = format!(
         "Could not find soundfont file '{}' in any expected location",
         SOUNDFONT_NAME
-    ))
+    );
+    log::error!("{}", error_msg);
+    Err(anyhow::anyhow!(error_msg))
 }
 
 pub fn init_stream() -> Result<Stream> {
@@ -72,7 +95,8 @@ pub fn init_stream() -> Result<Stream> {
     let current_beat_in_bar: Arc<AtomicU8> = Arc::new(AtomicU8::new(0));
 
     // Load and verify soundfont
-    let sf2_path = find_soundfont_path()?;
+    let sf2_path = get_soundfont_path()?;
+    log::info!("Attempting to open soundfont at: {:?}", sf2_path);
     let mut sf2 = File::open(&sf2_path)
         .map_err(|e| anyhow::anyhow!("Failed to open soundfont file at {:?}: {}", sf2_path, e))?;
     let sound_font = Arc::new(
