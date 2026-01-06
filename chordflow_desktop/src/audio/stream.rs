@@ -1,4 +1,4 @@
-use crate::{AudioCommand, AudioEvent, AUDIO_CMD, AUDIO_EVT};
+use crate::{audio::settings::AUDIO_SETTINGS, AudioCommand, AudioEvent, AUDIO_CMD, AUDIO_EVT};
 use anyhow::Result;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -211,20 +211,35 @@ pub fn init_stream() -> Result<Stream> {
                     let curr_subdiv = current_subdivision.load(Ordering::Relaxed);
                     let curr_beat = current_beat_in_bar.load(Ordering::Relaxed);
 
-                    // Determine which sound to play
-                    let (note, velocity) = if curr_subdiv == 0 {
+                    // Determine which sound to play and apply volume settings
+                    let (note, base_velocity, volume_multiplier) = if curr_subdiv == 0 {
                         // This is a main beat
                         if curr_beat == 0 {
                             // First beat of bar - accent
-                            (CLICK_ACCENT, VELOCITY_ACCENT)
+                            (
+                                CLICK_ACCENT,
+                                VELOCITY_ACCENT,
+                                AUDIO_SETTINGS.get_metronome_accent_volume(),
+                            )
                         } else {
                             // Regular beat
-                            (CLICK_NORMAL, VELOCITY_NORMAL)
+                            (
+                                CLICK_NORMAL,
+                                VELOCITY_NORMAL,
+                                AUDIO_SETTINGS.get_metronome_beat_volume(),
+                            )
                         }
                     } else {
                         // This is a subdivision
-                        (CLICK_SUBDIVISION, VELOCITY_SUBDIVISION)
+                        (
+                            CLICK_SUBDIVISION,
+                            VELOCITY_SUBDIVISION,
+                            AUDIO_SETTINGS.get_metronome_subdivision_volume(),
+                        )
                     };
+
+                    // Apply volume and clamp to valid MIDI velocity range (0-127)
+                    let velocity = ((base_velocity as f32) * volume_multiplier).clamp(0.0, 127.0) as i32;
 
                     // Trigger click sound
                     synth.note_on(PERCUSSION_CHANNEL, note, velocity);
@@ -235,8 +250,11 @@ pub fn init_stream() -> Result<Stream> {
 
                         // Play chord if one is set
                         if let Some(ref midi_notes) = *chord_clone.lock() {
+                            let chord_volume = AUDIO_SETTINGS.get_chord_volume();
+                            let chord_velocity =
+                                ((CHORD_VELOCITY as f32) * chord_volume).clamp(0.0, 127.0) as i32;
                             for &note in midi_notes {
-                                synth.note_on(CHORD_CHANNEL, note as i32, CHORD_VELOCITY);
+                                synth.note_on(CHORD_CHANNEL, note as i32, chord_velocity);
                             }
                         }
                     }

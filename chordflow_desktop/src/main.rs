@@ -9,6 +9,7 @@ use dioxus::desktop::{
 use crate::{audio::stream::init_stream, ui::app::App};
 
 mod audio;
+mod components;
 mod state;
 mod ui;
 
