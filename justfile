@@ -56,8 +56,11 @@ bump part:
     # Update version in chordflow_desktop/Cargo.toml
     sed -i '' "s/^version = \"$current\"/version = \"$new_version\"/" chordflow_desktop/Cargo.toml
 
+    # Update Cargo.lock by running cargo check
+    cargo check -p chordflow_desktop
+
     # Add and commit
-    git add chordflow_desktop/Cargo.toml
+    git add chordflow_desktop/Cargo.toml Cargo.lock
     git commit -m "chore: bump version to v$new_version"
 
     # Create tag
@@ -66,4 +69,4 @@ bump part:
     echo "Version bumped to v$new_version"
     echo "Tag v$new_version created"
     echo ""
-    echo "To push: git push && git push --tags"
+    echo "To push: git push && git push origin v$new_version"
