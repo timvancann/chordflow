@@ -1,6 +1,6 @@
 [package]
 name = "chordflow_desktop"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Tim van Cann <timvancann@gmail.com>"]
 edition = "2021"
 default-run = "chordflow_desktop"
