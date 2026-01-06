@@ -27,11 +27,25 @@ jobs:
       - name: Build macOS Bundle
         run: cd chordflow_desktop && dx bundle --release --platform desktop
 
-      - name: Remove adhoc signature to prevent "damaged" error
+      - name: Fix executable permissions and re-sign app bundle
         run: |
           APP_PATH=$(find target/dx -name "*.app" -path "*/bundle/macos/bundle/macos/*" | head -1)
-          echo "Removing adhoc signature from: $APP_PATH"
-          codesign --remove-signature "$APP_PATH"
+          echo "Processing app bundle: $APP_PATH"
+
+          # Fix executable permissions (often lost during bundling)
+          echo "Setting executable permissions..."
+          chmod +x "$APP_PATH/Contents/MacOS/"*
+          ls -la "$APP_PATH/Contents/MacOS/"
+
+          # Verify architecture
+          echo "Verifying architecture..."
+          EXECUTABLE=$(find "$APP_PATH/Contents/MacOS" -type f -perm +111 | head -1)
+          file "$EXECUTABLE"
+
+          # Ad-hoc sign properly (instead of removing signature)
+          echo "Ad-hoc signing bundle..."
+          codesign --force --deep --sign - "$APP_PATH"
+          codesign --verify --verbose "$APP_PATH"
 
       - name: Get version from tag
         id: get_version
