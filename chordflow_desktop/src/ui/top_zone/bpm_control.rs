@@ -1,13 +1,9 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
-use dioxus_free_icons::{
-    icons::fa_solid_icons::{FaPause, FaPlay},
-    Icon,
-};
 
 use crate::{
-    ui::app::{AppState, MetronomeState},
+    ui::app::MetronomeState,
     AudioCommand, AUDIO_CMD,
 };
 

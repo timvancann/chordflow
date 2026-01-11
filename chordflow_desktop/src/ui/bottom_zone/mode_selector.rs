@@ -5,6 +5,7 @@ use strum::IntoEnumIterator;
 
 use crate::{state::modes::ModeOption, ui::app::AppState};
 
+#[allow(dead_code)]
 pub fn ModeSelector() -> Element {
     let mut app_state = use_context::<Signal<AppState>>();
 

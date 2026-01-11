@@ -16,6 +16,7 @@ use std::{
 };
 
 // Bundle the soundfont file using Dioxus asset system
+#[allow(dead_code)]
 const SOUNDFONT_ASSET: Asset = asset!("/assets/TimGM6mb.sf2");
 
 /// Get the soundfont file path
@@ -122,7 +123,7 @@ pub fn init_stream() -> Result<Stream> {
     let current_subdivision_cmd = current_subdivision.clone();
     let current_beat_in_bar_cmd = current_beat_in_bar.clone();
     let is_count_in_cmd = is_count_in.clone();
-    let ticks_per_bar_cmd = ticks_per_bar.clone();
+    let _ticks_per_bar_cmd = ticks_per_bar.clone();
 
     // Spawn a dedicated thread to handle audio commands
     std::thread::spawn(move || {

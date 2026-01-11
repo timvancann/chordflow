@@ -15,6 +15,7 @@ pub enum ModeOption {
     Custom,
 }
 
+#[allow(dead_code)]
 #[derive(
     Clone, Copy, Debug, EnumIter, Display, AsRefStr, PartialEq, EnumCount, FromRepr, Default,
 )]
