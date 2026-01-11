@@ -14,6 +14,7 @@ mod ui;
 
 pub enum AudioCommand {
     Start,
+    StartWithCountIn,
     Stop,
     Restart,
     SetBPM(u16),

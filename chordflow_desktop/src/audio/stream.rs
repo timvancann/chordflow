@@ -93,6 +93,7 @@ pub fn init_stream() -> Result<Stream> {
     let current_subdivision: Arc<AtomicU8> = Arc::new(AtomicU8::new(0));
     let ticks_per_bar: Arc<AtomicU8> = Arc::new(AtomicU8::new(4));
     let current_beat_in_bar: Arc<AtomicU8> = Arc::new(AtomicU8::new(0));
+    let is_count_in: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
 
     // Load and verify soundfont
     let sf2_path = get_soundfont_path()?;
@@ -120,6 +121,8 @@ pub fn init_stream() -> Result<Stream> {
     let subdivisions_per_beat_cmd = subdivisions_per_beat.clone();
     let current_subdivision_cmd = current_subdivision.clone();
     let current_beat_in_bar_cmd = current_beat_in_bar.clone();
+    let is_count_in_cmd = is_count_in.clone();
+    let ticks_per_bar_cmd = ticks_per_bar.clone();
 
     // Spawn a dedicated thread to handle audio commands
     std::thread::spawn(move || {
@@ -130,6 +133,20 @@ pub fn init_stream() -> Result<Stream> {
                         // Reset all counters to start of bar
                         current_subdivision_cmd.store(0, Ordering::Relaxed);
                         current_beat_in_bar_cmd.store(0, Ordering::Relaxed);
+                        // Not in count-in mode
+                        is_count_in_cmd.store(false, Ordering::Relaxed);
+                        // Schedule first tick immediately
+                        let current = sample_counter_cmd.load(Ordering::Relaxed);
+                        next_click_sample_cmd.store(current, Ordering::Relaxed);
+                        // Start playing
+                        is_playing_cmd.store(true, Ordering::Relaxed);
+                    }
+                    AudioCommand::StartWithCountIn => {
+                        // Reset all counters to start of bar
+                        current_subdivision_cmd.store(0, Ordering::Relaxed);
+                        current_beat_in_bar_cmd.store(0, Ordering::Relaxed);
+                        // Enable count-in mode
+                        is_count_in_cmd.store(true, Ordering::Relaxed);
                         // Schedule first tick immediately
                         let current = sample_counter_cmd.load(Ordering::Relaxed);
                         next_click_sample_cmd.store(current, Ordering::Relaxed);
@@ -141,6 +158,8 @@ pub fn init_stream() -> Result<Stream> {
                         // Reset counters so next start is clean
                         current_subdivision_cmd.store(0, Ordering::Relaxed);
                         current_beat_in_bar_cmd.store(0, Ordering::Relaxed);
+                        // Reset count-in state
+                        is_count_in_cmd.store(false, Ordering::Relaxed);
                     }
                     AudioCommand::Restart => {
                         // Reset all counters to start of bar
@@ -201,6 +220,7 @@ pub fn init_stream() -> Result<Stream> {
 
     let synth_clone = synthesizer.clone();
     let chord_clone = chord.clone();
+    let is_count_in_clone = is_count_in.clone();
     let stream = device.build_output_stream(
         &config,
         move |buffer: &mut [f32], _: &cpal::OutputCallbackInfo| {
@@ -268,17 +288,24 @@ pub fn init_stream() -> Result<Stream> {
                     // Trigger click sound
                     synth.note_on(PERCUSSION_CHANNEL, note, velocity);
 
-                    // Only send Tick event and play chord on main beats (not subdivisions)
-                    if curr_subdiv == 0 {
-                        let _ = AUDIO_EVT.0.try_send(AudioEvent::Tick);
+                    // Check if we're in count-in mode
+                    let in_count_in = is_count_in_clone.load(Ordering::Relaxed);
 
-                        // Play chord if one is set
-                        if let Some(ref midi_notes) = *chord_clone.lock() {
-                            let chord_volume = AUDIO_SETTINGS.get_chord_volume();
-                            let chord_velocity =
-                                ((CHORD_VELOCITY as f32) * chord_volume).clamp(0.0, 127.0) as i32;
-                            for &note in midi_notes {
-                                synth.note_on(CHORD_CHANNEL, note as i32, chord_velocity);
+                    // Only send Tick event and play chord on main beats (not subdivisions)
+                    // and not during count-in
+                    if curr_subdiv == 0 {
+                        if !in_count_in {
+                            // Not in count-in, send tick and play chord normally
+                            let _ = AUDIO_EVT.0.try_send(AudioEvent::Tick);
+
+                            // Play chord if one is set
+                            if let Some(ref midi_notes) = *chord_clone.lock() {
+                                let chord_volume = AUDIO_SETTINGS.get_chord_volume();
+                                let chord_velocity =
+                                    ((CHORD_VELOCITY as f32) * chord_volume).clamp(0.0, 127.0) as i32;
+                                for &note in midi_notes {
+                                    synth.note_on(CHORD_CHANNEL, note as i32, chord_velocity);
+                                }
                             }
                         }
                     }
@@ -291,6 +318,11 @@ pub fn init_stream() -> Result<Stream> {
                     if next_subdiv == 0 {
                         let next_beat = (curr_beat + 1) % ticks_per_bar.load(Ordering::Relaxed);
                         current_beat_in_bar.store(next_beat, Ordering::Relaxed);
+
+                        // If count-in is active and we've wrapped back to beat 0, disable count-in
+                        if in_count_in && next_beat == 0 {
+                            is_count_in_clone.store(false, Ordering::Relaxed);
+                        }
                     }
 
                     // Schedule next click (subdivision or main beat)

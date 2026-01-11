@@ -39,7 +39,15 @@ pub fn PlayControl() -> Element {
                     metronome_state.write().current_bar = 1;
                     metronome_state.write().current_tick = 0;
                     app_state.write().is_playing = true;
-                    let _ = AUDIO_CMD.0.try_send(AudioCommand::Start);
+
+                    // Check if count-in is enabled
+                    let count_in = metronome_state.read().count_in_enabled;
+                    let cmd = if count_in {
+                        AudioCommand::StartWithCountIn
+                    } else {
+                        AudioCommand::Start
+                    };
+                    let _ = AUDIO_CMD.0.try_send(cmd);
                 },
                 Icon { icon: FaPlay }
             }

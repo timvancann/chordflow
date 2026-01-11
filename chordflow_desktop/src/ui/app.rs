@@ -27,6 +27,7 @@ pub struct MetronomeState {
     pub current_bar: u8,
     pub current_tick: u8,
     pub subdivision: Subdivision,
+    pub count_in_enabled: bool,
 }
 
 impl Default for MetronomeState {
@@ -38,6 +39,7 @@ impl Default for MetronomeState {
             current_bar: 1,
             current_tick: 0,
             subdivision: Subdivision::default(),
+            count_in_enabled: false,
         }
     }
 }
