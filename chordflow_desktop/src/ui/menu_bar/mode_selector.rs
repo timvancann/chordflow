@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use chordflow_music_theory::scale::{Scale, ScaleType};
 use dioxus::prelude::*;
 use strum::IntoEnumIterator;

@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use chordflow_music_theory::quality::Quality;
 use dioxus::prelude::*;
 use strum::IntoEnumIterator;

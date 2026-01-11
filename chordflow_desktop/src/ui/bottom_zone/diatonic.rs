@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use chordflow_music_theory::note::generate_all_roots;
 use dioxus::prelude::*;
 
