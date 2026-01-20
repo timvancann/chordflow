@@ -1,9 +1,9 @@
 use std::sync::LazyLock;
 
 use crossbeam_channel::{bounded, Receiver, Sender};
-use dioxus::desktop::{
-    tao::platform::macos::WindowBuilderExtMacOS, Config, LogicalSize, WindowBuilder,
-};
+#[cfg(target_os = "macos")]
+use dioxus::desktop::tao::platform::macos::WindowBuilderExtMacOS;
+use dioxus::desktop::{Config, LogicalSize, WindowBuilder};
 
 use crate::{audio::stream::init_stream, ui::app::App};
 
@@ -51,14 +51,21 @@ fn main() {
     log::info!("Current working directory: {:?}", std::env::current_dir());
     log::info!("Executable path: {:?}", std::env::current_exe());
 
-    let window_builder = WindowBuilder::new()
+    let mut window_builder = WindowBuilder::new()
         .with_transparent(false)
         .with_decorations(true)
         .with_focused(true)
         .with_resizable(true)
-        .with_title("ChordFlow")
-        .with_has_shadow(true)
-        .with_movable_by_window_background(true)
+        .with_title("ChordFlow");
+
+    #[cfg(target_os = "macos")]
+    {
+        window_builder = window_builder
+            .with_has_shadow(true)
+            .with_movable_by_window_background(true);
+    }
+
+    window_builder = window_builder
         .with_inner_size(LogicalSize {
             height: 910,
             width: 1000,
@@ -85,14 +92,30 @@ fn main() {
 }
 
 fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
-    use std::fs::OpenOptions;
+    use std::fs::{create_dir_all, OpenOptions};
 
     // Try to create log file in a writable location
-    let log_path = if let Some(home) = std::env::var_os("HOME") {
-        std::path::PathBuf::from(home).join("Library/Logs/ChordFlow.log")
+    let log_path = if cfg!(target_os = "macos") {
+        if let Some(home) = std::env::var_os("HOME") {
+            std::path::PathBuf::from(home).join("Library/Logs/ChordFlow.log")
+        } else {
+            std::path::PathBuf::from("/tmp/chordflow.log")
+        }
     } else {
-        std::path::PathBuf::from("/tmp/chordflow.log")
+        // Linux/other
+        if let Some(home) = std::env::var_os("HOME") {
+            std::path::PathBuf::from(home).join(".local/share/chordflow/chordflow.log")
+        } else {
+            std::path::PathBuf::from("/tmp/chordflow.log")
+        }
     };
+
+    // Ensure the parent directory exists
+    if let Some(parent) = log_path.parent() {
+        if !parent.exists() {
+            create_dir_all(parent)?;
+        }
+    }
 
     let log_file = OpenOptions::new()
         .create(true)
