@@ -16,60 +16,96 @@ use std::{
 };
 
 // Bundle the soundfont file using Dioxus asset system
-#[allow(dead_code)]
 const SOUNDFONT_ASSET: Asset = asset!("/assets/TimGM6mb.sf2");
 
 /// Get the soundfont file path
-/// Note: We use asset!() macro above to ensure the file is bundled,
-/// but we need to locate the actual file on disk for rustysynth
+/// Uses the Dioxus asset system to get the correct path for both development and bundled builds
 fn get_soundfont_path() -> Result<PathBuf> {
-    const SOUNDFONT_NAME: &str = "TimGM6mb.sf2";
+    // Get the bundled asset info - this contains the actual filename (with hash in production)
+    let bundled = SOUNDFONT_ASSET.bundled();
+    let bundled_path = bundled.bundled_path();
+    let absolute_source_path = bundled.absolute_source_path();
 
-    log::info!("Searching for soundfont file: {}", SOUNDFONT_NAME);
+    log::info!("Soundfont bundled_path: {}", bundled_path);
+    log::info!("Soundfont absolute_source_path: {}", absolute_source_path);
     log::info!("Current directory: {:?}", std::env::current_dir());
 
-    // Try development path first
-    let dev_path = PathBuf::from("assets").join(SOUNDFONT_NAME);
-    log::info!("Checking dev path: {:?}", dev_path);
+    // In development mode, use the absolute source path directly
+    let source_path = PathBuf::from(absolute_source_path);
+    if source_path.exists() {
+        log::info!("Found soundfont at source path: {:?}", source_path);
+        return Ok(source_path);
+    }
+
+    // Try development path (relative to cwd)
+    let dev_path = PathBuf::from("assets/TimGM6mb.sf2");
     if dev_path.exists() {
         log::info!("Found soundfont at dev path: {:?}", dev_path);
         return Ok(dev_path);
     }
 
-    // Try macOS bundle path: executable is in .app/Contents/MacOS/
-    // Resources are in .app/Contents/Resources/
+    // For bundled builds, resolve based on executable location
     if let Ok(exe_path) = std::env::current_exe() {
         log::info!("Executable path: {:?}", exe_path);
 
-        // Go from MacOS/ to Resources/
-        if let Some(macos_dir) = exe_path.parent() {
-            log::info!("MacOS dir: {:?}", macos_dir);
-            let resources_dir = macos_dir.parent().map(|p| p.join("Resources"));
-            if let Some(resources) = resources_dir {
-                log::info!("Resources dir: {:?}", resources);
+        // Extract the filename from the bundled path (e.g., "TimGM6mb-dxhf18b947c4b5781f.sf2")
+        let bundled_filename = PathBuf::from(bundled_path)
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "TimGM6mb.sf2".to_string());
 
-                // Check directly in Resources (where Dioxus bundles it)
-                let bundle_path = resources.join(SOUNDFONT_NAME);
+        log::info!("Looking for bundled filename: {}", bundled_filename);
+
+        if let Some(macos_dir) = exe_path.parent() {
+            // macOS bundle: executable is in .app/Contents/MacOS/
+            // Resources are in .app/Contents/Resources/
+            if let Some(contents_dir) = macos_dir.parent() {
+                let resources_dir = contents_dir.join("Resources");
+                log::info!("Resources dir: {:?}", resources_dir);
+
+                // Check in Resources/assets/ (where dx puts hashed assets)
+                let bundle_assets_path = resources_dir.join("assets").join(&bundled_filename);
+                log::info!("Checking bundle assets path: {:?}", bundle_assets_path);
+                if bundle_assets_path.exists() {
+                    log::info!("Found soundfont at: {:?}", bundle_assets_path);
+                    return Ok(bundle_assets_path);
+                }
+
+                // Check directly in Resources/ (for non-hashed bundle builds)
+                let bundle_path = resources_dir.join("TimGM6mb.sf2");
                 log::info!("Checking bundle path: {:?}", bundle_path);
                 if bundle_path.exists() {
                     log::info!("Found soundfont at: {:?}", bundle_path);
                     return Ok(bundle_path);
                 }
 
-                // Check in Resources/assets
-                let bundle_assets_path = resources.join("assets").join(SOUNDFONT_NAME);
-                log::info!("Checking bundle assets path: {:?}", bundle_assets_path);
-                if bundle_assets_path.exists() {
-                    log::info!("Found soundfont at: {:?}", bundle_assets_path);
-                    return Ok(bundle_assets_path);
+                // Also check for the hashed version directly in Resources
+                let bundle_hashed_path = resources_dir.join(&bundled_filename);
+                if bundle_hashed_path.exists() {
+                    log::info!("Found soundfont at: {:?}", bundle_hashed_path);
+                    return Ok(bundle_hashed_path);
                 }
+            }
+
+            // Linux/Windows: assets folder next to executable
+            let assets_path = macos_dir.join("assets").join(&bundled_filename);
+            if assets_path.exists() {
+                log::info!("Found soundfont at: {:?}", assets_path);
+                return Ok(assets_path);
+            }
+
+            // Try without hash for Linux/Windows
+            let assets_path_no_hash = macos_dir.join("assets").join("TimGM6mb.sf2");
+            if assets_path_no_hash.exists() {
+                log::info!("Found soundfont at: {:?}", assets_path_no_hash);
+                return Ok(assets_path_no_hash);
             }
         }
     }
 
     let error_msg = format!(
-        "Could not find soundfont file '{}' in any expected location",
-        SOUNDFONT_NAME
+        "Could not find soundfont file. Bundled path: '{}', Source path: '{}'",
+        bundled_path, absolute_source_path
     );
     log::error!("{}", error_msg);
     Err(anyhow::anyhow!(error_msg))
