@@ -25,10 +25,16 @@ impl ProgressionConfig {
     }
 
     pub fn get_bars_per_cycle_current(&self) -> u8 {
-        self.chords[self.current_chord_index].bars
+        self.chords
+            .get(self.current_chord_index)
+            .map(|c| c.bars)
+            .unwrap_or(1)
     }
 
     pub fn generate_next_chord(&mut self) {
+        if self.chords.is_empty() {
+            return;
+        }
         self.current_chord = self.next_chord.clone();
         self.current_chord_index = (self.current_chord_index + 1) % self.chords.len();
         let next_index = (self.current_chord_index + 1) % self.chords.len();
@@ -84,5 +90,38 @@ impl ProgressionChord {
                 Ok(ProgressionChord::new(chord))
             })
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generate_next_chord_on_empty_progression_does_not_panic() {
+        let mut config = ProgressionConfig::default();
+        config.generate_next_chord();
+        assert_eq!(config.current_chord_index, 0);
+        assert!(config.next_chord.is_none());
+    }
+
+    #[test]
+    fn get_bars_per_cycle_current_on_empty_progression_does_not_panic() {
+        let config = ProgressionConfig::default();
+        assert_eq!(config.get_bars_per_cycle_current(), 1);
+    }
+
+    #[test]
+    fn generate_next_chord_cycles_through_progression() {
+        let chords = ProgressionChord::from_string("C G Am F".to_string()).unwrap();
+        let mut config = ProgressionConfig {
+            chords,
+            ..Default::default()
+        };
+        config.reset();
+        config.generate_next_chord();
+        assert_eq!(config.current_chord_index, 1);
+        assert_eq!(config.current_chord.as_ref().unwrap().origin, "G");
+        assert_eq!(config.next_chord.as_ref().unwrap().origin, "Am");
     }
 }
