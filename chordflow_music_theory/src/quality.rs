@@ -43,7 +43,7 @@ impl Quality {
             "aug" => Quality::Augmented,
             "7" => Quality::Dominant,
             "maj7" => Quality::MajorSeventh,
-            "m7" => Quality::MajorSeventh,
+            "m7" => Quality::MinorSeventh,
             "m7b5" => Quality::HalfDiminished,
             "dim7" => Quality::DiminishedSeventh,
             "o7" => Quality::DiminishedSeventh,
@@ -131,6 +131,31 @@ mod tests {
     use strum::IntoEnumIterator;
 
     use super::Quality;
+
+    #[test]
+    fn test_from_string_maps_every_symbol_it_claims_to_support() {
+        let cases = [
+            ("", Quality::Major),
+            ("m", Quality::Minor),
+            ("-", Quality::Minor),
+            ("o", Quality::Diminished),
+            ("dim", Quality::Diminished),
+            ("+", Quality::Augmented),
+            ("aug", Quality::Augmented),
+            ("7", Quality::Dominant),
+            ("maj7", Quality::MajorSeventh),
+            // Regression: "m7" used to map to MajorSeventh.
+            ("m7", Quality::MinorSeventh),
+            ("m7b5", Quality::HalfDiminished),
+            ("dim7", Quality::DiminishedSeventh),
+            ("o7", Quality::DiminishedSeventh),
+            ("mMaj7", Quality::MinorMajorSeventh),
+            ("maj7#5", Quality::AugmentedMajorSeventh),
+        ];
+        for (symbol, quality) in cases {
+            assert_eq!(Quality::from_string(symbol), quality, "symbol {symbol:?}");
+        }
+    }
 
     #[test]
     fn test_new_qualities_round_trip_through_intervals() {
