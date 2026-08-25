@@ -95,7 +95,9 @@ fn calculate_chord_quality_in_scale(scale: &Scale, interval: &Interval) -> Quali
         .iter()
         .map(|i| normalize(i - new_chord_indexes[0], 12))
         .collect::<Vec<i32>>();
-    Quality::from_intervals(zero_based_chord_indexes)
+    Quality::from_intervals(zero_based_chord_indexes.clone()).unwrap_or_else(|| {
+        panic!("no chord quality names the interval set {zero_based_chord_indexes:?}")
+    })
 }
 
 fn normalize(interval: i32, base: i32) -> i32 {
