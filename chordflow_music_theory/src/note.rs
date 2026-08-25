@@ -184,8 +184,8 @@ mod tests {
 
     #[test]
     fn test_add_interval_normalises_wraps_that_overshoot_flat() {
-        // Gb ionian's 4th degree is a diminished-fourth-shaped step from Gb
-        // that used to compute as C############ instead of Cb.
+        // Gb ionian's 4th degree is a perfect-fourth-shaped step from Gb
+        // that used to compute as C########### instead of Cb.
         use crate::scale::{Scale, ScaleType};
 
         let scale = Scale::new(Note::new(NoteLetter::G, -1), ScaleType::Ionian);
