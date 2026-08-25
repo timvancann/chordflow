@@ -1,3 +1,4 @@
+// DEAD: superseded by Scale::diatonic_triads in chordflow_music_theory.
 use chordflow_music_theory::{
     chord::Chord,
     interval::Interval,
@@ -138,20 +139,20 @@ mod tests {
     fn test_calculate_chord_quality_in_scale() {
         assert_eq!(
             calculate_chord_quality_in_scale(
-                &Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Diatonic),
+                &Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Ionian),
                 &Interval::MajorThird
             ),
             Quality::Minor
         );
         assert_eq!(
             calculate_chord_quality_in_scale(
-                &Scale::new(Note::new(NoteLetter::F, 1), ScaleType::Diatonic),
+                &Scale::new(Note::new(NoteLetter::F, 1), ScaleType::Ionian),
                 &Interval::PerfectFourth
             ),
             Quality::Major
         );
 
-        let c_major = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Diatonic);
+        let c_major = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Ionian);
         let real_qualities = vec![
             Quality::Major,
             Quality::Minor,
@@ -171,7 +172,7 @@ mod tests {
 
     #[test]
     fn test_next_diatonic_chord() {
-        let c_major = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Diatonic);
+        let c_major = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Ionian);
 
         let actual_intervals = vec![
             Interval::MajorSecond,

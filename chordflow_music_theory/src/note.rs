@@ -113,12 +113,17 @@ impl Note {
     }
 
     pub fn add_interval(&self, interval: Interval) -> Note {
-        let new_semitones =
-            (self.letter.to_semitones() + self.accidentals + interval.to_semitones()) % 12;
+        let new_semitones = (self.letter.to_semitones() + self.accidentals + interval.to_semitones())
+            .rem_euclid(12);
         let new_letter_index = (self.letter.to_index() + interval.to_index()) % 7;
         let new_letter = NoteLetter::from_letter_index(new_letter_index);
 
-        let remaining_semitones = new_semitones - new_letter.to_semitones();
+        let mut remaining_semitones = new_semitones - new_letter.to_semitones();
+        if remaining_semitones > 6 {
+            remaining_semitones -= 12;
+        } else if remaining_semitones < -6 {
+            remaining_semitones += 12;
+        }
         Note::new(new_letter, remaining_semitones)
     }
 }
@@ -147,20 +152,24 @@ mod tests {
         let intervals = Interval::iter();
 
         let actual_notes = vec![
-            Note::new(NoteLetter::C, 0),
-            Note::new(NoteLetter::D, -1),
-            Note::new(NoteLetter::D, 0),
-            Note::new(NoteLetter::E, -1),
-            Note::new(NoteLetter::E, 0),
-            Note::new(NoteLetter::F, 0),
-            Note::new(NoteLetter::F, 1),
-            Note::new(NoteLetter::F, 1),
-            Note::new(NoteLetter::G, -1),
-            Note::new(NoteLetter::G, 0),
-            Note::new(NoteLetter::A, -1),
-            Note::new(NoteLetter::A, 0),
-            Note::new(NoteLetter::B, -1),
-            Note::new(NoteLetter::B, 0),
+            Note::new(NoteLetter::C, 0),  // R
+            Note::new(NoteLetter::D, -1), // b2
+            Note::new(NoteLetter::D, 0),  // 2
+            Note::new(NoteLetter::D, 1),  // #2
+            Note::new(NoteLetter::E, -1), // b3
+            Note::new(NoteLetter::E, 0),  // 3
+            Note::new(NoteLetter::F, -1), // b4
+            Note::new(NoteLetter::F, 0),  // 4
+            Note::new(NoteLetter::F, 1),  // #4
+            Note::new(NoteLetter::F, 1),  // tritone, spelled as #4
+            Note::new(NoteLetter::G, -1), // b5
+            Note::new(NoteLetter::G, 0),  // 5
+            Note::new(NoteLetter::G, 1),  // #5
+            Note::new(NoteLetter::A, -1), // b6
+            Note::new(NoteLetter::A, 0),  // 6
+            Note::new(NoteLetter::B, -2), // bb7
+            Note::new(NoteLetter::B, -1), // b7
+            Note::new(NoteLetter::B, 0),  // 7
         ];
 
         for (interval, actual) in intervals.zip(actual_notes) {
@@ -171,5 +180,55 @@ mod tests {
             Note::new(NoteLetter::F, 1).add_interval(Interval::PerfectFifth),
             Note::new(NoteLetter::C, 1)
         )
+    }
+
+    #[test]
+    fn test_add_interval_normalises_wraps_that_overshoot_flat() {
+        // Gb ionian's 4th degree is a perfect-fourth-shaped step from Gb
+        // that used to compute as C########### instead of Cb.
+        use crate::scale::{Scale, ScaleType};
+
+        let scale = Scale::new(Note::new(NoteLetter::G, -1), ScaleType::Ionian);
+        assert_eq!(
+            scale.notes(),
+            vec![
+                Note::new(NoteLetter::G, -1),
+                Note::new(NoteLetter::A, -1),
+                Note::new(NoteLetter::B, -1),
+                Note::new(NoteLetter::C, -1),
+                Note::new(NoteLetter::D, -1),
+                Note::new(NoteLetter::E, -1),
+                Note::new(NoteLetter::F, 0),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_add_interval_normalises_wraps_in_whole_tone() {
+        use crate::scale::{Scale, ScaleType};
+
+        let scale = Scale::new(Note::new(NoteLetter::D, -1), ScaleType::WholeTone);
+        assert_eq!(
+            scale.notes(),
+            vec![
+                Note::new(NoteLetter::D, -1),
+                Note::new(NoteLetter::E, -1),
+                Note::new(NoteLetter::F, 0),
+                Note::new(NoteLetter::G, 0),
+                Note::new(NoteLetter::A, 0),
+                Note::new(NoteLetter::C, -1),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_add_interval_normalises_wraps_that_overshoot_sharp() {
+        // C#'s major seventh is B#, not a letter-C spelling with a pile of
+        // sharps: the letter wraps around the B/C boundary the other way.
+        let csharp = Note::new(NoteLetter::C, 1);
+        assert_eq!(
+            csharp.add_interval(Interval::MajorSeventh),
+            Note::new(NoteLetter::B, 1)
+        );
     }
 }
