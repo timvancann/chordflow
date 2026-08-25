@@ -572,7 +572,7 @@ dependencies = [
 
 [[package]]
 name = "chordflow_desktop"
-version = "0.5.2"
+version = "0.5.3"
 dependencies = [
  "anyhow",
  "atomic_float",
@@ -602,7 +602,7 @@ dependencies = [
 
 [[package]]
 name = "chordflow_music_theory"
-version = "0.5.2"
+version = "0.5.3"
 dependencies = [
  "color-eyre",
  "itertools",

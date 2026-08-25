@@ -5,7 +5,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.5.2"
+version = "0.5.3"
 
 [workspace.metadata.release]
 shared-version = true
