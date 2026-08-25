@@ -22,9 +22,11 @@ each with its own spec, plan and tests:
 4. **Detachable window.** The reference view as its own desktop window.
 5. **Fretboard diagram.** Root-relative degree-dot fretboard, as on the poster.
 
-This spec covers project 1 only. It adds no UI and changes no user-visible
-behaviour. Its deliverable is a tested theory layer that projects 2 and 3
-can consume.
+This spec covers project 1 only. It adds no UI code. The three `Quality`
+variants added here do surface automatically in the existing
+Circle-of-Fourths quality picker (`chordflow_desktop/src/ui/bottom_zone/fourths.rs`
+builds its options from `Quality::iter()`); that is intended and kept. Its
+deliverable is a tested theory layer that projects 2 and 3 can consume.
 
 ## Goals
 
