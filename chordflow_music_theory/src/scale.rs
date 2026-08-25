@@ -171,6 +171,16 @@ impl Scale {
             intervals: scale_type.formula(),
         }
     }
+
+    /// The scale's notes, spelled correctly for this root. The same formula
+    /// gives different letters per key: G lydian is G A B C# D E F#, while
+    /// F# ionian genuinely contains E#.
+    pub fn notes(&self) -> Vec<Note> {
+        self.intervals
+            .iter()
+            .map(|interval| self.root.add_interval(*interval))
+            .collect()
+    }
 }
 
 #[cfg(test)]
@@ -259,5 +269,51 @@ mod tests {
     fn test_display_uses_the_poster_name() {
         let scale = Scale::new(Note::new(NoteLetter::G, 0), ScaleType::LydianDominant);
         assert_eq!(scale.to_string(), "G lydian dominant");
+    }
+
+    fn spell(root: (NoteLetter, i32), scale_type: ScaleType) -> String {
+        Scale::new(Note::new(root.0, root.1), scale_type)
+            .notes()
+            .iter()
+            .map(|n| n.to_string())
+            .collect::<Vec<String>>()
+            .join(" ")
+    }
+
+    #[test]
+    fn test_spelling_in_easy_keys() {
+        assert_eq!(spell((NoteLetter::C, 0), ScaleType::Ionian), "C D E F G A B");
+        assert_eq!(spell((NoteLetter::G, 0), ScaleType::Lydian), "G A B C♯ D E F♯");
+        assert_eq!(spell((NoteLetter::D, 0), ScaleType::Dorian), "D E F G A B C");
+        assert_eq!(spell((NoteLetter::A, 0), ScaleType::HarmonicMinor), "A B C D E F G♯");
+    }
+
+    #[test]
+    fn test_spelling_needs_sharps_that_look_wrong_but_are_right() {
+        // F# major really does contain E#, not F.
+        assert_eq!(spell((NoteLetter::F, 1), ScaleType::Ionian), "F♯ G♯ A♯ B C♯ D♯ E♯");
+    }
+
+    #[test]
+    fn test_spelling_needs_double_flats() {
+        // superlocrian bb7 is the scale that forces a doubly-flattened seventh.
+        assert_eq!(
+            spell((NoteLetter::C, 0), ScaleType::SuperlocrianDoubleFlat7),
+            "C D♭ E♭ F♭ G♭ A♭ B♭♭"
+        );
+    }
+
+    #[test]
+    fn test_every_scale_spells_in_every_root_without_panicking() {
+        for root in crate::note::generate_all_roots() {
+            for scale_type in ScaleType::iter() {
+                let scale = Scale::new(root, scale_type);
+                assert_eq!(
+                    scale.notes().len(),
+                    scale_type.formula().len(),
+                    "{root} {scale_type}"
+                );
+            }
+        }
     }
 }
