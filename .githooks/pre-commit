@@ -1,0 +1,42 @@
+#!/bin/sh
+# Blocks a commit when the workspace is not rustfmt-clean or clippy has
+# anything to say. Enable with:
+#     git config core.hooksPath .githooks
+#
+# Skip a single commit with `git commit --no-verify` when you need to.
+
+set -e
+
+if ! command -v cargo >/dev/null 2>&1; then
+    echo "pre-commit: cargo not on PATH, skipping fmt and clippy checks" >&2
+    exit 0
+fi
+
+echo "pre-commit: cargo fmt --all --check"
+if ! cargo fmt --all --check; then
+    cat >&2 <<'MSG'
+
+pre-commit: formatting check failed.
+
+Run `cargo fmt --all`, restage, and commit again.
+
+If the offending code is a table that is meant to stay wide (the scale
+formulas in chordflow_music_theory/src/scale.rs are the precedent), mark it
+`#[rustfmt::skip]` rather than reflowing it.
+MSG
+    exit 1
+fi
+
+echo "pre-commit: cargo clippy --workspace --all-targets"
+if ! cargo clippy --workspace --all-targets -- -D warnings; then
+    cat >&2 <<'MSG'
+
+pre-commit: clippy found lints.
+
+Fix them, or annotate the specific site with `#[allow(clippy::the_lint)]`
+and a comment explaining why.
+MSG
+    exit 1
+fi
+
+echo "pre-commit: ok"

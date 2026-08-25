@@ -68,3 +68,21 @@ Contributions are welcome! Feel free to submit issues and pull requests.
 3. Commit changes (git commit -m "Added cool feature")
 4. Push to branch (git push origin feature-name)
 5. Open a pull request
+
+### Pre-commit hook
+
+The repo ships a hook that blocks a commit unless `cargo fmt --all --check` and
+`cargo clippy --workspace --all-targets -- -D warnings` both pass. Git does not
+enable hooks from a clone automatically, so turn it on once per checkout:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Bypass it for a single commit with `git commit --no-verify`.
+
+Some tables are deliberately kept wider than rustfmt would like, because they
+are meant to be read against a reference document rather than reflowed. The
+scale formulas in `chordflow_music_theory/src/scale.rs` are the precedent: they
+carry `#[rustfmt::skip]` with a comment saying why. Prefer that over reflowing
+a table you are meant to be able to eyeball.
