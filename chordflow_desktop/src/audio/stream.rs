@@ -119,7 +119,7 @@ pub fn init_stream() -> Result<Stream> {
     let channels = device.default_output_config()?.channels() as usize;
     // Start from the default output configuration so we match the device's expectations
     let config = device.default_output_config()?.config();
-    let sample_rate = config.sample_rate.0;
+    let sample_rate = config.sample_rate;
 
     let bpm: Arc<AtomicU16> = Arc::new(AtomicU16::new(120));
     let is_playing: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
@@ -259,7 +259,7 @@ pub fn init_stream() -> Result<Stream> {
     let chord_clone = chord.clone();
     let is_count_in_clone = is_count_in.clone();
     let stream = device.build_output_stream(
-        &config,
+        config,
         move |buffer: &mut [f32], _: &cpal::OutputCallbackInfo| {
             buffer.fill(0.0);
 

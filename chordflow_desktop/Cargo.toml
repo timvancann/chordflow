@@ -12,7 +12,7 @@ atomic_float = "1.1"
 chordflow_music_theory = {path = "../chordflow_music_theory/"}
 chordparser = "4.0.4"
 clap = { version = "4.5.27", features = ["derive"] }
-cpal = "0.15.3"
+cpal = "0.18.1"
 crossbeam-channel = "0.5.15"
 dioxus = { version = "0.7.2", features = ["router", "desktop"] }
 dioxus-free-icons = { version = "0.10.0", features = ["hero-icons-solid", "font-awesome-solid", "ionicons", "lucide"] }
