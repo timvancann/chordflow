@@ -1,7 +1,9 @@
-use strum::{AsRefStr, Display, EnumCount, EnumIter, FromRepr};
+use std::fmt::Display;
+
+use strum::{AsRefStr, EnumCount, EnumIter, FromRepr};
 
 #[derive(
-    Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, EnumCount, FromRepr, Eq, Display,
+    Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, EnumCount, FromRepr, Eq,
 )]
 pub enum Interval {
     #[default]
@@ -93,6 +95,10 @@ impl Interval {
     }
 
     /// The scale-degree notation used on the Scales.pdf poster.
+    ///
+    /// `Octave` labels as `"R"` here, but it must not be passed to
+    /// scale/spelling code: `to_index` panics on it, so
+    /// `Note::add_interval(Octave)` panics too.
     pub fn degree_label(self) -> &'static str {
         match self {
             Interval::Unison | Interval::Octave => "R",
@@ -120,6 +126,12 @@ impl Interval {
             .iter()
             .map(|&x| Interval::from_semitone(x))
             .collect()
+    }
+}
+
+impl Display for Interval {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.degree_label())
     }
 }
 
@@ -177,5 +189,12 @@ mod tests {
         for (interval, label) in cases {
             assert_eq!(interval.degree_label(), label, "{interval:?}");
         }
+    }
+
+    #[test]
+    fn test_display_delegates_to_degree_label() {
+        assert_eq!(Interval::MajorThird.to_string(), "3");
+        assert_eq!(Interval::AugmentedFifth.to_string(), "#5");
+        assert_eq!(Interval::DiminishedSeventh.to_string(), "bb7");
     }
 }
