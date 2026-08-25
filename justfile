@@ -19,5 +19,7 @@ bundle-debug:
     cd chordflow_desktop && dx bundle --platform desktop
 
 # Bump the workspace version, commit and tag (usage: just release patch|minor|major)
-release part:
-    cargo release {{part}} --execute
+# Pass "dry-run" as a second argument to preview without changing anything:
+#   just release patch dry-run
+release part mode="execute":
+    cargo release {{part}} {{ if mode == "dry-run" { "" } else { "--execute" } }}
