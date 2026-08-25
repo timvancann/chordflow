@@ -197,17 +197,22 @@ impl Scale {
     }
 
     /// Builds one chord per degree by taking the scale members at the given
-    /// index offsets. Degrees whose interval set no `Quality` names are
-    /// skipped: a missing chord symbol is better than a wrong one, and the
-    /// exotic scales produce several sets that no symbol describes.
+    /// index offsets, or `None` if any degree's interval set names no
+    /// `Quality`: a missing chord beats a wrong one, and a partial result
+    /// would silently misalign the returned vector against scale degrees.
+    /// Every catalog scale currently names a quality at every degree, so
+    /// this `None` branch is not reached in practice; it exists as a guard
+    /// against silently mislabelling a future scale that doesn't.
+    /// When `Some`, the returned vector's index IS the scale degree —
+    /// callers may rely on `result[degree]` being the chord for that degree.
     fn stacked_chords(&self, offsets: &[usize]) -> Option<Vec<Chord>> {
         if self.intervals.len() != 7 {
             return None;
         }
 
         let notes = self.notes();
-        let chords = (0..7)
-            .filter_map(|degree| {
+        (0..7)
+            .map(|degree| {
                 let members: Vec<i32> = offsets
                     .iter()
                     .map(|offset| self.intervals[(degree + offset) % 7].to_semitones())
@@ -219,9 +224,7 @@ impl Scale {
                     .collect();
                 Quality::from_intervals(relative).map(|q| Chord::new(notes[degree], q))
             })
-            .collect();
-
-        Some(chords)
+            .collect()
     }
 }
 
@@ -433,8 +436,18 @@ mod tests {
     fn test_every_heptatonic_scale_derives_chords_without_panicking() {
         for scale_type in ScaleType::iter().filter(|t| t.formula().len() == 7) {
             let scale = Scale::new(Note::new(NoteLetter::C, 0), scale_type);
-            assert!(scale.diatonic_triads().is_some(), "{scale_type} triads");
-            assert!(scale.diatonic_sevenths().is_some(), "{scale_type} sevenths");
+            let triads = scale.diatonic_triads();
+            let sevenths = scale.diatonic_sevenths();
+            assert_eq!(
+                triads.as_ref().map(Vec::len),
+                Some(7),
+                "{scale_type} triads should name a quality at every degree"
+            );
+            assert_eq!(
+                sevenths.as_ref().map(Vec::len),
+                Some(7),
+                "{scale_type} sevenths should name a quality at every degree"
+            );
         }
     }
 }
