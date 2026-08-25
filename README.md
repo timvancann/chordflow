@@ -2,10 +2,12 @@
 
 ![Logo](icons/web/icon-192.png)
 
-ChordFlow is a GUI Desktop app and TUI (Terminal User Interface) tool designed to help guitarists/musicians
+ChordFlow is a desktop app designed to help guitarists/musicians
 practice improvisation and master the guitar neck by providing dynamic chord progressions with a built-in metronome.  
 
 Grab the latest [release](https://github.com/timvancann/chordflow/releases)
+
+![ChordFlow](docs/screenshot.png)
 
 ## ✨ Features
 
@@ -14,7 +16,6 @@ Grab the latest [release](https://github.com/timvancann/chordflow/releases)
 - 📊 Visual Progress Bar – Displays the current beat and bar progress.
 - 🎼 Real-Time Chord Display – Shows the current and upcoming chord.
 - ⚙️ Customizability – Users can supply their own SoundFont for metronome ticks and chord sounds.
-- 🎥 [TUI demo](https://www.youtube.com/watch?v=Oc7po6uNBfQ)
 - 🎥 [Desktop GUI demo](https://www.youtube.com/watch?v=X5V7tlbOBbY)
 
 ## 📦 Installation
@@ -29,24 +30,19 @@ cargo build --release
 
 2. Grab the latest [release](https://github.com/timvancann/chordflow/releases)
 
-## 🚀 Usage
+### Opening the app on macOS
 
-### TUI
+Releases are ad-hoc signed and not notarized by Apple, so the first launch is blocked by
+Gatekeeper with a message like "ChordFlow is damaged and can't be opened". The app is fine,
+macOS just refuses unnotarized downloads. After installing, remove the quarantine flag once:
 
 ```bash
-./chordflow_tui --help
-
-Usage: chordflow [OPTIONS]
-
-Options:
-      --bpm <INT>              BPM (Beats per minute) [default: 100]
-  -b, --bars-per-chord <INT>   Number of bars per chord [default: 2]
-  -t, --ticks-per-bar <INT>    Number of beats per bar [default: 4]
-  -s, --soundfont <SOUNDFONT>  Soundfont file path
-  -h, --help                   Print help
+xattr -d com.apple.quarantine /Applications/ChordFlow.app
 ```
 
-### GUI
+After that the app opens normally.
+
+## 🚀 Usage
 
 Install [Dioxus CLI](https://dioxuslabs.com/learn/0.6/getting_started/)
 

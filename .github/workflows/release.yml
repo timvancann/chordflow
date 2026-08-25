@@ -65,6 +65,16 @@ jobs:
           name: Release ${{ steps.get_version.outputs.VERSION }}
           draft: false
           prerelease: false
+          body: |
+            ## Opening the app on macOS
+
+            This build is ad-hoc signed and not notarized by Apple, so the first launch is
+            blocked by Gatekeeper ("ChordFlow is damaged and can't be opened"). After
+            installing, remove the quarantine flag once:
+
+            ```
+            xattr -d com.apple.quarantine /Applications/ChordFlow.app
+            ```
           files: |
             ${{ steps.find_dmg.outputs.DMG_PATH }}
         env:
