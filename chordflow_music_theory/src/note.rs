@@ -143,9 +143,79 @@ pub fn generate_all_roots() -> Vec<Note> {
         .collect()
 }
 
+/// The twelve keys guitarists actually read in, one spelling per pitch class,
+/// ordered around the circle of fifths from C.
+///
+/// `generate_all_roots` returns seventeen spellings because it is a cartesian
+/// product: C# and Db both appear, as do D#, G#, and A#, which produce
+/// unreadable scales (A# ionian is A# B# C## D# E# F## G##). This is the
+/// curated set for anything a person has to read.
+pub fn practical_keys() -> Vec<Note> {
+    vec![
+        Note::new(NoteLetter::C, 0),
+        Note::new(NoteLetter::G, 0),
+        Note::new(NoteLetter::D, 0),
+        Note::new(NoteLetter::A, 0),
+        Note::new(NoteLetter::E, 0),
+        Note::new(NoteLetter::B, 0),
+        Note::new(NoteLetter::F, 1),
+        Note::new(NoteLetter::D, -1),
+        Note::new(NoteLetter::A, -1),
+        Note::new(NoteLetter::E, -1),
+        Note::new(NoteLetter::B, -1),
+        Note::new(NoteLetter::F, 0),
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_practical_keys_covers_each_pitch_class_once() {
+        let keys = practical_keys();
+        assert_eq!(keys.len(), 12);
+
+        let mut pitch_classes: Vec<i32> = keys
+            .iter()
+            .map(|n| n.to_semitones().rem_euclid(12))
+            .collect();
+        pitch_classes.sort();
+        assert_eq!(pitch_classes, (0..12).collect::<Vec<i32>>());
+    }
+
+    #[test]
+    fn test_practical_keys_are_spelled_the_readable_way() {
+        let spelled: Vec<String> = practical_keys().iter().map(|n| n.to_string()).collect();
+        assert_eq!(
+            spelled,
+            vec![
+                "C",
+                "G",
+                "D",
+                "A",
+                "E",
+                "B",
+                "F\u{266f}",
+                "D\u{266d}",
+                "A\u{266d}",
+                "E\u{266d}",
+                "B\u{266d}",
+                "F"
+            ]
+        );
+    }
+
+    #[test]
+    fn test_practical_keys_are_a_subset_of_all_roots() {
+        let all = generate_all_roots();
+        for key in practical_keys() {
+            assert!(
+                all.contains(&key),
+                "{key} is not a root the crate generates"
+            );
+        }
+    }
 
     #[test]
     fn test_add_interval() {

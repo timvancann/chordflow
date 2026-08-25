@@ -10,11 +10,14 @@ const MAIN_CSS: Asset = asset!("/assets/main.css");
 use crate::{
     state::{
         diatonic::DiatonicConfig, fourths::FourthsConfig, modes::ModeOption,
-        progression::ProgressionConfig,
+        progression::ProgressionConfig, view::View,
     },
     ui::{
-        bottom_zone::layout::BottomZone, center_stage::layout::CenterStage,
-        menu_bar::layout::MenuBar, top_zone::layout::TopZone,
+        bottom_zone::layout::BottomZone,
+        center_stage::layout::CenterStage,
+        menu_bar::layout::MenuBar,
+        reference::layout::{ReferenceScreen, ReferenceState},
+        top_zone::layout::TopZone,
         top_zone::subdivision_selector::Subdivision,
     },
     AudioCommand, AudioEvent, AUDIO_CMD, AUDIO_EVT, INITIAL_BPM,
@@ -65,6 +68,7 @@ impl MetronomeState {
 #[derive(Default)]
 pub struct AppState {
     pub is_playing: bool,
+    pub view: View,
     pub selected_mode: ModeOption,
     pub fourths_config: FourthsConfig,
     pub diatonic_config: DiatonicConfig,
@@ -178,6 +182,7 @@ pub fn App() -> Element {
     use_context_provider(|| selected_mode);
     use_context_provider(|| app_state);
     use_context_provider(|| metronome_state);
+    use_context_provider(|| Signal::new(ReferenceState::default()));
 
     use_future(move || async move {
         let _ = AUDIO_CMD.0.try_send(AudioCommand::SetChord(Some(
@@ -263,9 +268,16 @@ pub fn App() -> Element {
             div { class: "ambient-bg" }
 
             MenuBar {}
-            TopZone {}
-            CenterStage {}
-            BottomZone {}
+            match app_state.read().view {
+                View::Practice => rsx! {
+                    TopZone {}
+                    CenterStage {}
+                    BottomZone {}
+                },
+                View::Reference => rsx! {
+                    ReferenceScreen {}
+                },
+            }
         }
     }
 }
