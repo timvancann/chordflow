@@ -1,7 +1,11 @@
 [package]
 name = "chordflow_music_theory"
-version = "0.3.2"
+version.workspace = true
 edition = "2021"
+publish = false
+
+[package.metadata.release]
+tag = false
 
 [dependencies]
 color-eyre = "0.6.3"

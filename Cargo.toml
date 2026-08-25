@@ -4,6 +4,16 @@ members = [
     "chordflow_music_theory",
 ]
 
+[workspace.package]
+version = "0.5.2"
+
+[workspace.metadata.release]
+shared-version = true
+publish = false
+push = false
+tag-name = "v{{version}}"
+pre-release-commit-message = "chore: release v{{version}}"
+
 [profile]
 
 [profile.wasm-dev]
