@@ -1,3 +1,4 @@
+// DEAD: superseded by Scale::diatonic_triads in chordflow_music_theory.
 use chordflow_music_theory::{
     chord::Chord,
     interval::Interval,
