@@ -1,3 +1,4 @@
+pub mod chord_popup;
 pub mod family_tabs;
 pub mod key_selector;
 pub mod layout;

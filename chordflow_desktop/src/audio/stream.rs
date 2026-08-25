@@ -6,6 +6,10 @@ use cpal::{
 };
 use dioxus::prelude::*;
 use rustysynth::{SoundFont, Synthesizer, SynthesizerSettings};
+
+/// Channel 0 carries melodic content; the metronome uses the percussion channel.
+const CHORD_CHANNEL: i32 = 0;
+const CHORD_VELOCITY: i32 = 80;
 use std::{
     fs::File,
     path::PathBuf,
@@ -160,6 +164,7 @@ pub fn init_stream() -> Result<Stream> {
     let current_beat_in_bar_cmd = current_beat_in_bar.clone();
     let is_count_in_cmd = is_count_in.clone();
     let _ticks_per_bar_cmd = ticks_per_bar.clone();
+    let synth_cmd = synthesizer.clone();
 
     // Spawn a dedicated thread to handle audio commands
     std::thread::spawn(move || {
@@ -229,6 +234,19 @@ pub fn init_stream() -> Result<Stream> {
                             *chord_cmd.lock() = None;
                         }
                     }
+                    AudioCommand::PlayChordNow(notes) => {
+                        let chord_volume = AUDIO_SETTINGS.get_chord_volume();
+                        let velocity =
+                            ((CHORD_VELOCITY as f32) * chord_volume).clamp(0.0, 127.0) as i32;
+
+                        let mut synth = synth_cmd.lock();
+                        // Release whatever is still ringing on this channel, or
+                        // repeated clicks pile voices on top of each other.
+                        synth.note_off_all_channel(CHORD_CHANNEL, false);
+                        for note in notes {
+                            synth.note_on(CHORD_CHANNEL, note as i32, velocity);
+                        }
+                    }
                     _ => {}
                 }
             }
@@ -252,8 +270,6 @@ pub fn init_stream() -> Result<Stream> {
     const VELOCITY_SUBDIVISION: i32 = 70;
 
     // Chord configuration
-    const CHORD_CHANNEL: i32 = 0; // Use channel 0 for melodic instruments
-    const CHORD_VELOCITY: i32 = 80;
 
     let synth_clone = synthesizer.clone();
     let chord_clone = chord.clone();

@@ -2,13 +2,18 @@
 
 use dioxus::prelude::*;
 
-use crate::ui::reference::{layout::ReferenceState, rows::rows_for_family};
+use crate::ui::reference::{
+    chord_popup::SelectedChord, layout::ReferenceState, rows::rows_for_family,
+};
 
 /// One row per scale in the active family: name, formula, and the notes in the
-/// chosen key. Clicking a row opens its chords beneath it.
+/// chosen key. Clicking a row opens its diatonic sevenths beneath it, and
+/// clicking one of those opens the chord popup.
 #[component]
 pub fn ScaleTable() -> Element {
     let mut reference_state = use_context::<Signal<ReferenceState>>();
+    let mut selected_chord = use_context::<Signal<SelectedChord>>();
+
     let state = reference_state.read();
     let rows = rows_for_family(state.family, state.root);
     let expanded = state.expanded;
@@ -30,6 +35,7 @@ pub fn ScaleTable() -> Element {
                         let scale_type = row.scale_type;
                         let is_open = expanded == Some(scale_type);
                         let open_class = if is_open { "open" } else { "" };
+                        let note_count = row.notes.split(' ').count();
                         rsx! {
                             div { key: "{row.name}", class: "scale-row-group",
                                 button {
@@ -42,20 +48,30 @@ pub fn ScaleTable() -> Element {
                                 }
                                 if is_open {
                                     div { class: "scale-detail",
-                                        match (&row.triads, &row.sevenths) {
-                                            (Some(triads), Some(sevenths)) => rsx! {
-                                                div { class: "detail-line",
-                                                    span { class: "reference-label", "triads" }
-                                                    span { class: "mono", "{triads}" }
-                                                }
+                                        match &row.sevenths {
+                                            Some(sevenths) => rsx! {
                                                 div { class: "detail-line",
                                                     span { class: "reference-label", "sevenths" }
-                                                    span { class: "mono", "{sevenths}" }
+                                                    div { class: "chord-buttons",
+                                                        {
+                                                            sevenths
+                                                                .iter()
+                                                                .copied()
+                                                                .map(|chord| rsx! {
+                                                                    button {
+                                                                        key: "{chord}",
+                                                                        class: "chord-button mono",
+                                                                        onclick: move |_| selected_chord.write().select(chord),
+                                                                        "{chord}"
+                                                                    }
+                                                                })
+                                                        }
+                                                    }
                                                 }
                                             },
-                                            _ => rsx! {
+                                            None => rsx! {
                                                 p { class: "detail-note",
-                                                    "{row.name} has {row.notes.split(' ').count()} notes, so it has no diatonic chords. Stacking thirds by scale degree only has an agreed meaning for seven-note scales."
+                                                    "{row.name} has {note_count} notes, so it has no diatonic chords. Stacking thirds by scale degree only has an agreed meaning for seven-note scales."
                                                 }
                                             },
                                         }

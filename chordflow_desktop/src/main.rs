@@ -21,6 +21,9 @@ pub enum AudioCommand {
     SetBarsPerCycle(u8),
     SetSubdivision(u8),
     SetChord(Option<Vec<u8>>),
+    /// Sound a chord immediately, independently of the metronome. Used by the
+    /// reference screen's chord popup, where there may be no beat running.
+    PlayChordNow(Vec<u8>),
 }
 
 pub enum AudioEvent {

@@ -217,6 +217,21 @@ impl Scale {
         self.stacked_chords(&[0, 2, 4])
     }
 
+    /// Which degree of this scale `chord` is the diatonic seventh of, if any.
+    ///
+    /// Matched by pitch class and quality rather than by `Note` equality, so a
+    /// scale that spells the degree's root differently from the chord (B# for
+    /// C, say) still matches. Returns `None` for non-heptatonic scales and for
+    /// a chord that the scale merely contains without it sitting on a degree.
+    pub fn degree_of_seventh(&self, chord: &Chord) -> Option<usize> {
+        let wanted = chord.root.to_semitones().rem_euclid(12);
+
+        self.diatonic_sevenths()?.iter().position(|candidate| {
+            candidate.root.to_semitones().rem_euclid(12) == wanted
+                && candidate.quality == chord.quality
+        })
+    }
+
     /// The seventh chords built by stacking thirds on each degree. Same
     /// `None` condition as `diatonic_triads`.
     pub fn diatonic_sevenths(&self) -> Option<Vec<Chord>> {
@@ -301,6 +316,23 @@ pub fn scales_containing(chord: &Chord) -> Vec<Scale> {
     }
 
     best.into_iter().map(|(scale, _)| scale).collect()
+}
+
+/// Every scale in which `chord` is a diatonic seventh, paired with the degree
+/// it sits on, in catalog order.
+///
+/// Narrower than `scales_containing`, and more useful for a player: a C7 is
+/// *contained* in 36 catalog scales but is an actual degree of 28 of them.
+/// The count stays high because modes multiply — C7 is the V of F major, and
+/// F major has seven modes, so that one parent scale yields seven entries.
+pub fn scale_degrees_of(chord: &Chord) -> Vec<(Scale, usize)> {
+    scales_containing(chord)
+        .into_iter()
+        .filter_map(|scale| {
+            let degree = scale.degree_of_seventh(chord)?;
+            Some((scale, degree))
+        })
+        .collect()
 }
 
 /// Total accidentals across a scale's notes, plus one if the root is sharp.
@@ -598,12 +630,85 @@ mod tests {
     use crate::chord::Chord;
     use crate::quality::Quality;
 
-    use super::scales_containing;
+    use super::{scale_degrees_of, scales_containing};
 
     fn contains_scale(scales: &[Scale], root: (NoteLetter, i32), scale_type: ScaleType) -> bool {
         scales
             .iter()
             .any(|s| s.root == Note::new(root.0, root.1) && s.scale_type == scale_type)
+    }
+
+    #[test]
+    fn test_degree_of_seventh_places_the_chord_in_the_scale() {
+        let c7 = Chord::new(Note::new(NoteLetter::C, 0), Quality::Dominant);
+
+        // C7 is the V of F major, and the I of C mixolydian, which is the
+        // same seven notes seen from a different centre.
+        let f_ionian = Scale::new(Note::new(NoteLetter::F, 0), ScaleType::Ionian);
+        assert_eq!(f_ionian.degree_of_seventh(&c7), Some(4));
+
+        let c_mixolydian = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Mixolydian);
+        assert_eq!(c_mixolydian.degree_of_seventh(&c7), Some(0));
+    }
+
+    #[test]
+    fn test_degree_of_seventh_rejects_the_wrong_quality() {
+        let c_major_seventh = Chord::new(Note::new(NoteLetter::C, 0), Quality::MajorSeventh);
+        let f_ionian = Scale::new(Note::new(NoteLetter::F, 0), ScaleType::Ionian);
+
+        // F major's fifth degree is C7, not CΔ, so the major seventh is not a
+        // degree of it even though every one of its notes is in the scale.
+        assert_eq!(f_ionian.degree_of_seventh(&c_major_seventh), None);
+    }
+
+    #[test]
+    fn test_degree_of_seventh_is_none_for_non_heptatonic_scales() {
+        let c7 = Chord::new(Note::new(NoteLetter::C, 0), Quality::Dominant);
+        let blues = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::MinorBlues);
+        assert_eq!(blues.degree_of_seventh(&c7), None);
+    }
+
+    #[test]
+    fn test_scale_degrees_of_is_a_subset_of_scales_containing() {
+        let c7 = Chord::new(Note::new(NoteLetter::C, 0), Quality::Dominant);
+        let degrees = scale_degrees_of(&c7);
+        let contained = scales_containing(&c7);
+
+        assert!(!degrees.is_empty());
+        assert!(
+            degrees.len() < contained.len(),
+            "being a degree is stricter than being contained"
+        );
+        for (scale, _) in &degrees {
+            assert!(
+                contained.contains(scale),
+                "{scale} should also be contained"
+            );
+        }
+    }
+
+    #[test]
+    fn test_scale_degrees_of_finds_every_mode_of_the_parent_scale() {
+        let c7 = Chord::new(Note::new(NoteLetter::C, 0), Quality::Dominant);
+        let names: Vec<String> = scale_degrees_of(&c7)
+            .iter()
+            .filter(|(s, _)| s.scale_type.family() == ScaleFamily::Major)
+            .map(|(s, d)| format!("{s} {d}"))
+            .collect();
+
+        // One parent scale, F major, seen from all seven of its modes.
+        assert_eq!(
+            names,
+            vec![
+                "F ionian 4",
+                "G dorian 3",
+                "A phrygian 2",
+                "B\u{266d} lydian 1",
+                "C mixolydian 0",
+                "D aeolian 6",
+                "E locrian 5",
+            ]
+        );
     }
 
     #[test]

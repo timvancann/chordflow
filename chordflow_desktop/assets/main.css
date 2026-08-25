@@ -1028,13 +1028,8 @@ input[type="checkbox"]:checked::after {
 .scale-detail .mono {
     font-family: var(--font-mono);
     font-size: 13px;
-    /* Chord symbols run together at a single space: "B+ C#- D#" reads as one
-       token. Widening the gap separates them without inventing a delimiter. */
+    /* Note runs read as one token at a single space. */
     word-spacing: 0.5em;
-}
-
-.scale-detail .mono {
-    word-spacing: 0.85em;
 }
 
 .scale-row .col-formula {
@@ -1130,4 +1125,155 @@ input[type="checkbox"]:checked::after {
 .scale-row.open .col-chevron {
     transform: rotate(90deg);
     color: var(--accent-color);
+}
+
+/* Clickable chords in the expanded row */
+.chord-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.chord-button {
+    background: transparent;
+    border: 1px solid var(--border-control);
+    border-radius: 4px;
+    color: var(--secondary-accent-color);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.chord-button:hover {
+    border-color: var(--secondary-accent-color);
+    background: rgba(255, 140, 50, 0.12);
+}
+
+/* Chord popup */
+.chord-panel {
+    max-width: 520px;
+}
+
+.chord-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.chord-symbol {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 500;
+    color: var(--secondary-accent-color);
+}
+
+.chord-quality {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.chord-tones-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.chord-tones {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    color: var(--text-primary);
+    margin-top: 4px;
+}
+
+.chord-play {
+    flex-shrink: 0;
+    background: rgba(0, 217, 255, 0.1);
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+    color: var(--accent-color);
+    font-family: var(--font-main);
+    font-size: 14px;
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.chord-play:hover {
+    background: rgba(0, 217, 255, 0.2);
+}
+
+.chord-play:active {
+    transform: translateY(1px);
+}
+
+/* Degree list */
+.chord-degrees .detail-note {
+    margin: 6px 0 14px;
+}
+
+.degree-group {
+    border-top: 1px solid var(--border-subtle);
+}
+
+.degree-group-header {
+    display: grid;
+    grid-template-columns: 16px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    font-size: 14px;
+    text-align: left;
+    padding: 10px 4px;
+    cursor: pointer;
+}
+
+.degree-group-header:hover {
+    color: var(--accent-color);
+}
+
+.degree-group-header.open .col-chevron {
+    transform: rotate(90deg);
+    color: var(--accent-color);
+}
+
+.degree-count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.degree-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 4px 12px 26px;
+}
+
+.degree-entry {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 10px;
+    align-items: baseline;
+}
+
+.degree-numeral {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent-color);
+}
+
+.degree-scale {
+    font-size: 13px;
+    color: var(--text-secondary);
 }

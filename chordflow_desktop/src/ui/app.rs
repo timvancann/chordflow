@@ -16,6 +16,7 @@ use crate::{
         bottom_zone::layout::BottomZone,
         center_stage::layout::CenterStage,
         menu_bar::layout::MenuBar,
+        reference::chord_popup::{ChordPopup, SelectedChord},
         reference::layout::{ReferenceScreen, ReferenceState},
         top_zone::layout::TopZone,
         top_zone::subdivision_selector::Subdivision,
@@ -183,6 +184,7 @@ pub fn App() -> Element {
     use_context_provider(|| app_state);
     use_context_provider(|| metronome_state);
     use_context_provider(|| Signal::new(ReferenceState::default()));
+    use_context_provider(|| Signal::new(SelectedChord::default()));
 
     use_future(move || async move {
         let _ = AUDIO_CMD.0.try_send(AudioCommand::SetChord(Some(
@@ -276,6 +278,7 @@ pub fn App() -> Element {
                 },
                 View::Reference => rsx! {
                     ReferenceScreen {}
+                    ChordPopup {}
                 },
             }
         }

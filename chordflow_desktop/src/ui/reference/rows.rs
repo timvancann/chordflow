@@ -1,4 +1,5 @@
 use chordflow_music_theory::{
+    chord::Chord,
     note::Note,
     scale::{Scale, ScaleFamily, ScaleType},
 };
@@ -16,10 +17,15 @@ pub struct ScaleRow {
     pub formula: String,
     /// The degrees spelled in the chosen key, e.g. "G A B C♯ D E F".
     pub notes: String,
+    /// The diatonic seventh chords, kept as `Chord` rather than a rendered
+    /// string so each one can be clicked, played, and looked up.
+    ///
+    /// Sevenths only, no triads: a seventh already contains its triad, so
+    /// showing both is redundant and the sevenths are harmonically complete.
+    ///
     /// `None` for the six non-heptatonic scales, where stacking thirds by
     /// scale index has no accepted meaning.
-    pub triads: Option<String>,
-    pub sevenths: Option<String>,
+    pub sevenths: Option<Vec<Chord>>,
 }
 
 pub fn build_row(scale_type: ScaleType, root: Note) -> ScaleRow {
@@ -30,12 +36,7 @@ pub fn build_row(scale_type: ScaleType, root: Note) -> ScaleRow {
         name: scale_type.display_name(),
         formula: join(scale.intervals.iter().map(|i| i.degree_label().to_string())),
         notes: join(scale.notes().iter().map(|n| n.to_string())),
-        triads: scale
-            .diatonic_triads()
-            .map(|cs| join(cs.iter().map(|c| c.to_string()))),
-        sevenths: scale
-            .diatonic_sevenths()
-            .map(|cs| join(cs.iter().map(|c| c.to_string()))),
+        sevenths: scale.diatonic_sevenths(),
     }
 }
 
@@ -68,10 +69,24 @@ mod tests {
         assert_eq!(row.name, "dorian");
         assert_eq!(row.formula, "R 2 b3 4 5 6 b7");
         assert_eq!(row.notes, "G A B\u{266d} C D E F");
-        assert_eq!(row.triads.as_deref(), Some("G- A- B\u{266d} C D- Eo F"));
+
+        let sevenths: Vec<String> = row
+            .sevenths
+            .expect("dorian is heptatonic")
+            .iter()
+            .map(|c| c.to_string())
+            .collect();
         assert_eq!(
-            row.sevenths.as_deref(),
-            Some("G-7 A-7 B\u{266d}\u{394} C7 D-7 E\u{f8} F\u{394}")
+            sevenths,
+            vec![
+                "G-7",
+                "A-7",
+                "B\u{266d}\u{394}",
+                "C7",
+                "D-7",
+                "E\u{f8}",
+                "F\u{394}"
+            ]
         );
     }
 
@@ -98,8 +113,11 @@ mod tests {
             ScaleType::DiminishedWholeHalf,
         ] {
             let row = build_row(scale_type, g());
-            assert!(row.triads.is_none(), "{} should have no triads", row.name);
-            assert!(row.sevenths.is_none());
+            assert!(
+                row.sevenths.is_none(),
+                "{} should have no diatonic sevenths",
+                row.name
+            );
             // The formula and notes still work.
             assert!(!row.formula.is_empty());
             assert!(!row.notes.is_empty());
