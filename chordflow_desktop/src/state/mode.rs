@@ -42,7 +42,7 @@ pub fn update_mode_from_state(
             practice_state.set_mode(Mode::Custom(config_state.progression.clone()))
         }
         ModeOption::Diatonic => practice_state.set_mode(Mode::Diatonic(
-            Scale::new(config_state.diatonic_root, ScaleType::Diatonic),
+            Scale::new(config_state.diatonic_root, ScaleType::Ionian),
             config_state.diatonic_option,
         )),
     }

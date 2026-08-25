@@ -1,15 +1,153 @@
 use std::fmt::Display;
 
-use strum::{AsRefStr, Display, EnumCount, EnumIter, FromRepr};
+use strum::{AsRefStr, EnumCount, EnumIter, FromRepr};
 
 use super::{interval::Interval, note::Note};
 
+/// The four groupings used on the Scales.pdf poster.
+#[derive(Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, Eq)]
+pub enum ScaleFamily {
+    Major,
+    MelodicMinor,
+    HarmonicMinor,
+    Other,
+}
+
+/// Every scale on the Scales.pdf poster, in the poster's order.
 #[derive(
-    Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, EnumCount, FromRepr, Eq, Display,
+    Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, EnumCount, FromRepr, Eq,
 )]
 pub enum ScaleType {
     #[default]
-    Diatonic,
+    Ionian,
+    Dorian,
+    Phrygian,
+    Lydian,
+    Mixolydian,
+    Aeolian,
+    Locrian,
+
+    MelodicMinor,
+    DorianFlat2,
+    LydianAugmented,
+    LydianDominant,
+    MixolydianFlat6,
+    AeolianFlat5,
+    Altered,
+
+    HarmonicMinor,
+    LocrianNatural6,
+    IonianAugmented,
+    LocrianSharp4,
+    PhrygianDominant,
+    LydianSharp9,
+    SuperlocrianDoubleFlat7,
+
+    MajorBlues,
+    MinorBlues,
+    WholeTone,
+    Augmented,
+    DiminishedHalfWhole,
+    DiminishedWholeHalf,
+}
+
+impl Display for ScaleType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.display_name())
+    }
+}
+
+impl ScaleType {
+    pub fn family(self) -> ScaleFamily {
+        use ScaleType::*;
+        match self {
+            Ionian | Dorian | Phrygian | Lydian | Mixolydian | Aeolian | Locrian => {
+                ScaleFamily::Major
+            }
+            MelodicMinor | DorianFlat2 | LydianAugmented | LydianDominant | MixolydianFlat6
+            | AeolianFlat5 | Altered => ScaleFamily::MelodicMinor,
+            HarmonicMinor | LocrianNatural6 | IonianAugmented | LocrianSharp4
+            | PhrygianDominant | LydianSharp9 | SuperlocrianDoubleFlat7 => {
+                ScaleFamily::HarmonicMinor
+            }
+            MajorBlues | MinorBlues | WholeTone | Augmented | DiminishedHalfWhole
+            | DiminishedWholeHalf => ScaleFamily::Other,
+        }
+    }
+
+    /// The name as printed on the poster, kept verbatim.
+    pub fn display_name(self) -> &'static str {
+        use ScaleType::*;
+        match self {
+            Ionian => "ionian",
+            Dorian => "dorian",
+            Phrygian => "phrygian",
+            Lydian => "lydian",
+            Mixolydian => "mixolydian",
+            Aeolian => "aeolian",
+            Locrian => "locrian",
+            MelodicMinor => "melodic minor",
+            DorianFlat2 => "dorian b2",
+            LydianAugmented => "lydian augmented",
+            LydianDominant => "lydian dominant",
+            MixolydianFlat6 => "mixolydian b6",
+            AeolianFlat5 => "aeolian b5",
+            Altered => "altered",
+            HarmonicMinor => "harmonic minor",
+            LocrianNatural6 => "locrian natural 6",
+            IonianAugmented => "ionian augmented",
+            LocrianSharp4 => "locrian #4",
+            PhrygianDominant => "phrygian dominant",
+            LydianSharp9 => "lydian #9",
+            SuperlocrianDoubleFlat7 => "superlocrian bb7",
+            MajorBlues => "major blues",
+            MinorBlues => "minor blues",
+            WholeTone => "whole tone",
+            Augmented => "augmented",
+            DiminishedHalfWhole => "diminished half whole",
+            DiminishedWholeHalf => "diminished whole half",
+        }
+    }
+
+    /// The scale's degrees, spelled. Spelling matters: `#4` and `b5` are the
+    /// same fret but different letters, and only the right one makes
+    /// `Note::add_interval` produce the correct note name.
+    pub fn formula(self) -> Vec<Interval> {
+        use Interval::*;
+        use ScaleType::*;
+        match self {
+            Ionian => vec![Unison, MajorSecond, MajorThird, PerfectFourth, PerfectFifth, MajorSixth, MajorSeventh],
+            Dorian => vec![Unison, MajorSecond, MinorThird, PerfectFourth, PerfectFifth, MajorSixth, MinorSeventh],
+            Phrygian => vec![Unison, MinorSecond, MinorThird, PerfectFourth, PerfectFifth, MinorSixth, MinorSeventh],
+            Lydian => vec![Unison, MajorSecond, MajorThird, AugmentedFourth, PerfectFifth, MajorSixth, MajorSeventh],
+            Mixolydian => vec![Unison, MajorSecond, MajorThird, PerfectFourth, PerfectFifth, MajorSixth, MinorSeventh],
+            Aeolian => vec![Unison, MajorSecond, MinorThird, PerfectFourth, PerfectFifth, MinorSixth, MinorSeventh],
+            Locrian => vec![Unison, MinorSecond, MinorThird, PerfectFourth, DiminishedFifth, MinorSixth, MinorSeventh],
+
+            MelodicMinor => vec![Unison, MajorSecond, MinorThird, PerfectFourth, PerfectFifth, MajorSixth, MajorSeventh],
+            DorianFlat2 => vec![Unison, MinorSecond, MinorThird, PerfectFourth, PerfectFifth, MajorSixth, MinorSeventh],
+            LydianAugmented => vec![Unison, MajorSecond, MajorThird, AugmentedFourth, AugmentedFifth, MajorSixth, MajorSeventh],
+            LydianDominant => vec![Unison, MajorSecond, MajorThird, AugmentedFourth, PerfectFifth, MajorSixth, MinorSeventh],
+            MixolydianFlat6 => vec![Unison, MajorSecond, MajorThird, PerfectFourth, PerfectFifth, MinorSixth, MinorSeventh],
+            AeolianFlat5 => vec![Unison, MajorSecond, MinorThird, PerfectFourth, DiminishedFifth, MinorSixth, MinorSeventh],
+            Altered => vec![Unison, MinorSecond, AugmentedSecond, MajorThird, DiminishedFifth, AugmentedFifth, MinorSeventh],
+
+            HarmonicMinor => vec![Unison, MajorSecond, MinorThird, PerfectFourth, PerfectFifth, MinorSixth, MajorSeventh],
+            LocrianNatural6 => vec![Unison, MinorSecond, MinorThird, PerfectFourth, DiminishedFifth, MajorSixth, MinorSeventh],
+            IonianAugmented => vec![Unison, MajorSecond, MajorThird, PerfectFourth, AugmentedFifth, MajorSixth, MajorSeventh],
+            LocrianSharp4 => vec![Unison, MajorSecond, MinorThird, AugmentedFourth, PerfectFifth, MajorSixth, MinorSeventh],
+            PhrygianDominant => vec![Unison, MinorSecond, MajorThird, PerfectFourth, PerfectFifth, MinorSixth, MinorSeventh],
+            LydianSharp9 => vec![Unison, AugmentedSecond, MajorThird, AugmentedFourth, PerfectFifth, MajorSixth, MajorSeventh],
+            SuperlocrianDoubleFlat7 => vec![Unison, MinorSecond, MinorThird, DiminishedFourth, DiminishedFifth, MinorSixth, DiminishedSeventh],
+
+            MajorBlues => vec![Unison, MajorSecond, MinorThird, MajorThird, PerfectFifth, MajorSixth],
+            MinorBlues => vec![Unison, MinorThird, PerfectFourth, DiminishedFifth, PerfectFifth, MinorSeventh],
+            WholeTone => vec![Unison, MajorSecond, MajorThird, AugmentedFourth, AugmentedFifth, MinorSeventh],
+            Augmented => vec![Unison, AugmentedSecond, MajorThird, PerfectFifth, AugmentedFifth, MajorSeventh],
+            DiminishedHalfWhole => vec![Unison, MinorSecond, AugmentedSecond, MajorThird, DiminishedFifth, PerfectFifth, MajorSixth, MinorSeventh],
+            DiminishedWholeHalf => vec![Unison, MajorSecond, MinorThird, PerfectFourth, DiminishedFifth, AugmentedFifth, MajorSixth, MajorSeventh],
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -27,48 +165,99 @@ impl Display for Scale {
 
 impl Scale {
     pub fn new(root: Note, scale_type: ScaleType) -> Scale {
-        let intervals = match scale_type {
-            ScaleType::Diatonic => vec![
-                Interval::Unison,
-                Interval::MajorSecond,
-                Interval::MajorThird,
-                Interval::PerfectFourth,
-                Interval::PerfectFifth,
-                Interval::MajorSixth,
-                Interval::MajorSeventh,
-            ],
-        };
-
         Scale {
             root,
             scale_type,
-            intervals,
+            intervals: scale_type.formula(),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use strum::IntoEnumIterator;
+
     use crate::note::{Note, NoteLetter};
 
-    use super::{Scale, ScaleType};
+    use super::{Scale, ScaleFamily, ScaleType};
+
+    /// Every row of Scales.pdf, transcribed. This table is the oracle for the
+    /// whole catalog: if a formula is ever mistyped, this test fails.
+    fn poster() -> Vec<(ScaleType, ScaleFamily, &'static str, &'static str)> {
+        vec![
+            (ScaleType::Ionian, ScaleFamily::Major, "ionian", "R 2 3 4 5 6 7"),
+            (ScaleType::Dorian, ScaleFamily::Major, "dorian", "R 2 b3 4 5 6 b7"),
+            (ScaleType::Phrygian, ScaleFamily::Major, "phrygian", "R b2 b3 4 5 b6 b7"),
+            (ScaleType::Lydian, ScaleFamily::Major, "lydian", "R 2 3 #4 5 6 7"),
+            (ScaleType::Mixolydian, ScaleFamily::Major, "mixolydian", "R 2 3 4 5 6 b7"),
+            (ScaleType::Aeolian, ScaleFamily::Major, "aeolian", "R 2 b3 4 5 b6 b7"),
+            (ScaleType::Locrian, ScaleFamily::Major, "locrian", "R b2 b3 4 b5 b6 b7"),
+
+            (ScaleType::MelodicMinor, ScaleFamily::MelodicMinor, "melodic minor", "R 2 b3 4 5 6 7"),
+            (ScaleType::DorianFlat2, ScaleFamily::MelodicMinor, "dorian b2", "R b2 b3 4 5 6 b7"),
+            (ScaleType::LydianAugmented, ScaleFamily::MelodicMinor, "lydian augmented", "R 2 3 #4 #5 6 7"),
+            (ScaleType::LydianDominant, ScaleFamily::MelodicMinor, "lydian dominant", "R 2 3 #4 5 6 b7"),
+            (ScaleType::MixolydianFlat6, ScaleFamily::MelodicMinor, "mixolydian b6", "R 2 3 4 5 b6 b7"),
+            (ScaleType::AeolianFlat5, ScaleFamily::MelodicMinor, "aeolian b5", "R 2 b3 4 b5 b6 b7"),
+            (ScaleType::Altered, ScaleFamily::MelodicMinor, "altered", "R b2 #2 3 b5 #5 b7"),
+
+            (ScaleType::HarmonicMinor, ScaleFamily::HarmonicMinor, "harmonic minor", "R 2 b3 4 5 b6 7"),
+            (ScaleType::LocrianNatural6, ScaleFamily::HarmonicMinor, "locrian natural 6", "R b2 b3 4 b5 6 b7"),
+            (ScaleType::IonianAugmented, ScaleFamily::HarmonicMinor, "ionian augmented", "R 2 3 4 #5 6 7"),
+            (ScaleType::LocrianSharp4, ScaleFamily::HarmonicMinor, "locrian #4", "R 2 b3 #4 5 6 b7"),
+            (ScaleType::PhrygianDominant, ScaleFamily::HarmonicMinor, "phrygian dominant", "R b2 3 4 5 b6 b7"),
+            (ScaleType::LydianSharp9, ScaleFamily::HarmonicMinor, "lydian #9", "R #2 3 #4 5 6 7"),
+            (ScaleType::SuperlocrianDoubleFlat7, ScaleFamily::HarmonicMinor, "superlocrian bb7", "R b2 b3 b4 b5 b6 bb7"),
+
+            // major blues: the poster prints "R 2 b3 b3 5 6"; confirmed typo,
+            // the flat third is followed by the natural third.
+            (ScaleType::MajorBlues, ScaleFamily::Other, "major blues", "R 2 b3 3 5 6"),
+            (ScaleType::MinorBlues, ScaleFamily::Other, "minor blues", "R b3 4 b5 5 b7"),
+            (ScaleType::WholeTone, ScaleFamily::Other, "whole tone", "R 2 3 #4 #5 b7"),
+            (ScaleType::Augmented, ScaleFamily::Other, "augmented", "R #2 3 5 #5 7"),
+            (ScaleType::DiminishedHalfWhole, ScaleFamily::Other, "diminished half whole", "R b2 #2 3 b5 5 6 b7"),
+            (ScaleType::DiminishedWholeHalf, ScaleFamily::Other, "diminished whole half", "R 2 b3 4 b5 #5 6 7"),
+        ]
+    }
 
     #[test]
-    fn test_c_major_notes() {
-        let scale = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Diatonic);
-
-        let actual_notes = vec![
-            Note::new(NoteLetter::C, 0),
-            Note::new(NoteLetter::D, 0),
-            Note::new(NoteLetter::E, 0),
-            Note::new(NoteLetter::F, 0),
-            Note::new(NoteLetter::G, 0),
-            Note::new(NoteLetter::A, 0),
-            Note::new(NoteLetter::B, 0),
-        ];
-
-        for (interval, note) in scale.intervals.into_iter().zip(actual_notes) {
-            assert_eq!(scale.root.add_interval(interval), note);
+    fn test_formulas_match_the_poster() {
+        for (scale_type, _, name, formula) in poster() {
+            let actual: Vec<&str> = scale_type
+                .formula()
+                .iter()
+                .map(|i| i.degree_label())
+                .collect();
+            assert_eq!(actual.join(" "), formula, "{name} formula");
         }
+    }
+
+    #[test]
+    fn test_families_and_names_match_the_poster() {
+        for (scale_type, family, name, _) in poster() {
+            assert_eq!(scale_type.family(), family, "{name} family");
+            assert_eq!(scale_type.display_name(), name, "{scale_type:?} name");
+        }
+    }
+
+    #[test]
+    fn test_catalog_is_complete_and_has_no_extras() {
+        let listed: Vec<ScaleType> = poster().into_iter().map(|(t, _, _, _)| t).collect();
+        let all: Vec<ScaleType> = ScaleType::iter().collect();
+        assert_eq!(all.len(), 27, "the poster has 27 scales");
+        assert_eq!(all, listed, "ScaleType order must match the poster's order");
+    }
+
+    #[test]
+    fn test_scale_new_reads_the_formula() {
+        let scale = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Lydian);
+        assert_eq!(scale.intervals, ScaleType::Lydian.formula());
+        assert_eq!(scale.root, Note::new(NoteLetter::C, 0));
+    }
+
+    #[test]
+    fn test_display_uses_the_poster_name() {
+        let scale = Scale::new(Note::new(NoteLetter::G, 0), ScaleType::LydianDominant);
+        assert_eq!(scale.to_string(), "G lydian dominant");
     }
 }

@@ -17,7 +17,7 @@ pub struct DiatonicConfig {
 
 impl DiatonicConfig {
     pub fn set_root(&mut self, root: Note) {
-        self.scale = Scale::new(root, ScaleType::Diatonic);
+        self.scale = Scale::new(root, ScaleType::Ionian);
         self.current_chord = Chord::new(self.scale.root, Quality::Major);
         self.next_chord = self.preview_next_chord();
     }
@@ -53,9 +53,9 @@ impl DiatonicConfig {
 
 impl Default for DiatonicConfig {
     fn default() -> Self {
-        let scale = Scale::new(Note::default(), ScaleType::Diatonic);
+        let scale = Scale::new(Note::default(), ScaleType::Ionian);
         DiatonicConfig {
-            scale: Scale::new(Note::default(), ScaleType::Diatonic),
+            scale: Scale::new(Note::default(), ScaleType::Ionian),
             is_random: false,
             current_chord: Chord::new(scale.root, Quality::Major),
             next_scale_interval: scale.intervals[0],
