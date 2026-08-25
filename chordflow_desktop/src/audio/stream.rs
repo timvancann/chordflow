@@ -282,107 +282,111 @@ pub fn init_stream() -> Result<Stream> {
             // Total number of samples that have been generated so far
             let current_sample = sample_counter.load(Ordering::Relaxed);
 
-            if !is_playing.load(Ordering::Relaxed) {
-                return;
-            }
-
-            let current_bpm = bpm.load(Ordering::Relaxed);
-            let subdivs = subdivisions_per_beat.load(Ordering::Relaxed) as u64;
-
             // How many frames (multi-channel sample groups) we must fill in this callback
             let frames = buffer.len() / channels;
 
-            // Calculate samples per beat and per subdivision
-            let samples_per_beat = (sample_rate as f64 * 60.0 / current_bpm as f64) as u64;
-            let samples_per_subdivision = samples_per_beat / subdivs;
+            // Only the metronome's scheduling depends on the play state.
+            // Rendering below must happen either way, or a chord sounded on
+            // demand while stopped would never reach the output buffer.
+            if is_playing.load(Ordering::Relaxed) {
+                let current_bpm = bpm.load(Ordering::Relaxed);
+                let subdivs = subdivisions_per_beat.load(Ordering::Relaxed) as u64;
 
-            for frame in 0..frames {
-                let next_click = next_click_sample.load(Ordering::Relaxed);
-                let frame_sample = current_sample + frame as u64;
+                // Calculate samples per beat and per subdivision
+                let samples_per_beat = (sample_rate as f64 * 60.0 / current_bpm as f64) as u64;
+                let samples_per_subdivision = samples_per_beat / subdivs;
 
-                if frame_sample >= next_click {
-                    let left_over_frames = frame_sample - next_click;
-                    let mut synth = synth_clone.lock();
+                for frame in 0..frames {
+                    let next_click = next_click_sample.load(Ordering::Relaxed);
+                    let frame_sample = current_sample + frame as u64;
 
-                    // Get current subdivision within the beat (0 = main beat)
-                    let curr_subdiv = current_subdivision.load(Ordering::Relaxed);
-                    let curr_beat = current_beat_in_bar.load(Ordering::Relaxed);
+                    if frame_sample >= next_click {
+                        let left_over_frames = frame_sample - next_click;
+                        let mut synth = synth_clone.lock();
 
-                    // Determine which sound to play and apply volume settings
-                    let (note, base_velocity, volume_multiplier) = if curr_subdiv == 0 {
-                        // This is a main beat
-                        if curr_beat == 0 {
-                            // First beat of bar - accent
-                            (
-                                CLICK_ACCENT,
-                                VELOCITY_ACCENT,
-                                AUDIO_SETTINGS.get_metronome_accent_volume(),
-                            )
+                        // Get current subdivision within the beat (0 = main beat)
+                        let curr_subdiv = current_subdivision.load(Ordering::Relaxed);
+                        let curr_beat = current_beat_in_bar.load(Ordering::Relaxed);
+
+                        // Determine which sound to play and apply volume settings
+                        let (note, base_velocity, volume_multiplier) = if curr_subdiv == 0 {
+                            // This is a main beat
+                            if curr_beat == 0 {
+                                // First beat of bar - accent
+                                (
+                                    CLICK_ACCENT,
+                                    VELOCITY_ACCENT,
+                                    AUDIO_SETTINGS.get_metronome_accent_volume(),
+                                )
+                            } else {
+                                // Regular beat
+                                (
+                                    CLICK_NORMAL,
+                                    VELOCITY_NORMAL,
+                                    AUDIO_SETTINGS.get_metronome_beat_volume(),
+                                )
+                            }
                         } else {
-                            // Regular beat
+                            // This is a subdivision
                             (
-                                CLICK_NORMAL,
-                                VELOCITY_NORMAL,
-                                AUDIO_SETTINGS.get_metronome_beat_volume(),
+                                CLICK_SUBDIVISION,
+                                VELOCITY_SUBDIVISION,
+                                AUDIO_SETTINGS.get_metronome_subdivision_volume(),
                             )
-                        }
-                    } else {
-                        // This is a subdivision
-                        (
-                            CLICK_SUBDIVISION,
-                            VELOCITY_SUBDIVISION,
-                            AUDIO_SETTINGS.get_metronome_subdivision_volume(),
-                        )
-                    };
+                        };
 
-                    // Apply volume and clamp to valid MIDI velocity range (0-127)
-                    let velocity =
-                        ((base_velocity as f32) * volume_multiplier).clamp(0.0, 127.0) as i32;
+                        // Apply volume and clamp to valid MIDI velocity range (0-127)
+                        let velocity =
+                            ((base_velocity as f32) * volume_multiplier).clamp(0.0, 127.0) as i32;
 
-                    // Trigger click sound
-                    synth.note_on(PERCUSSION_CHANNEL, note, velocity);
+                        // Trigger click sound
+                        synth.note_on(PERCUSSION_CHANNEL, note, velocity);
 
-                    // Check if we're in count-in mode
-                    let in_count_in = is_count_in_clone.load(Ordering::Relaxed);
+                        // Check if we're in count-in mode
+                        let in_count_in = is_count_in_clone.load(Ordering::Relaxed);
 
-                    // Only send Tick event and play chord on main beats (not subdivisions)
-                    // and not during count-in
-                    if curr_subdiv == 0 && !in_count_in {
-                        // Not in count-in, send tick and play chord normally
-                        let _ = AUDIO_EVT.0.try_send(AudioEvent::Tick);
+                        // Only send Tick event and play chord on main beats (not subdivisions)
+                        // and not during count-in
+                        if curr_subdiv == 0 && !in_count_in {
+                            // Not in count-in, send tick and play chord normally
+                            let _ = AUDIO_EVT.0.try_send(AudioEvent::Tick);
 
-                        // Play chord if one is set
-                        if let Some(ref midi_notes) = *chord_clone.lock() {
-                            let chord_volume = AUDIO_SETTINGS.get_chord_volume();
-                            let chord_velocity =
-                                ((CHORD_VELOCITY as f32) * chord_volume).clamp(0.0, 127.0) as i32;
-                            for &note in midi_notes {
-                                synth.note_on(CHORD_CHANNEL, note as i32, chord_velocity);
+                            // Play chord if one is set
+                            if let Some(ref midi_notes) = *chord_clone.lock() {
+                                let chord_volume = AUDIO_SETTINGS.get_chord_volume();
+                                let chord_velocity = ((CHORD_VELOCITY as f32) * chord_volume)
+                                    .clamp(0.0, 127.0)
+                                    as i32;
+                                for &note in midi_notes {
+                                    synth.note_on(CHORD_CHANNEL, note as i32, chord_velocity);
+                                }
                             }
                         }
-                    }
 
-                    // Advance subdivision counter
-                    let next_subdiv = (curr_subdiv + 1) % subdivs as u8;
-                    current_subdivision.store(next_subdiv, Ordering::Relaxed);
+                        // Advance subdivision counter
+                        let next_subdiv = (curr_subdiv + 1) % subdivs as u8;
+                        current_subdivision.store(next_subdiv, Ordering::Relaxed);
 
-                    // If we've completed all subdivisions, advance beat counter
-                    if next_subdiv == 0 {
-                        let next_beat = (curr_beat + 1) % ticks_per_bar.load(Ordering::Relaxed);
-                        current_beat_in_bar.store(next_beat, Ordering::Relaxed);
+                        // If we've completed all subdivisions, advance beat counter
+                        if next_subdiv == 0 {
+                            let next_beat = (curr_beat + 1) % ticks_per_bar.load(Ordering::Relaxed);
+                            current_beat_in_bar.store(next_beat, Ordering::Relaxed);
 
-                        // If count-in is active and we've wrapped back to beat 0, disable count-in
-                        if in_count_in && next_beat == 0 {
-                            is_count_in_clone.store(false, Ordering::Relaxed);
+                            // If count-in is active and we've wrapped back to beat 0, disable count-in
+                            if in_count_in && next_beat == 0 {
+                                is_count_in_clone.store(false, Ordering::Relaxed);
+                            }
                         }
-                    }
 
-                    // Schedule next click (subdivision or main beat)
-                    next_click_sample.store(
-                        next_click + samples_per_subdivision - left_over_frames,
-                        Ordering::Relaxed,
-                    );
+                        // Schedule next click (subdivision or main beat)
+                        next_click_sample.store(
+                            next_click + samples_per_subdivision - left_over_frames,
+                            Ordering::Relaxed,
+                        );
+                    }
                 }
+
+                sample_counter.fetch_add(frames as u64, Ordering::Relaxed);
             }
 
             // Render synthesizer output
@@ -411,8 +415,6 @@ pub fn init_stream() -> Result<Stream> {
                     *sample += (left[i / channels] + right[i / channels]) * 0.5;
                 }
             }
-
-            sample_counter.fetch_add(frames as u64, Ordering::Relaxed);
         },
         move |err| eprintln!("Audio stream error: {}", err),
         None,
