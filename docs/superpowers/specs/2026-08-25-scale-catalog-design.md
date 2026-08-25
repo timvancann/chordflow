@@ -46,8 +46,9 @@ can consume.
 
 ## The catalog
 
-Formulas are transcribed from `Scales.pdf`, which is the authority. Each
-scale belongs to one of four families, matching the poster's grouping.
+Formulas are transcribed from `Scales.pdf`, which is the authority except
+for the single documented correction to major blues below. Each scale belongs
+to one of four families, matching the poster's grouping.
 
 ### Major
 
@@ -100,11 +101,12 @@ dorian. The poster is the authority for names as well as formulas.
 | diminished half whole | R b2 #2 3 b5 5 6 b7 | 8 |
 | diminished whole half | R 2 b3 4 b5 #5 6 7 | 8 |
 
-**Known deviation from the poster.** The poster's major blues row renders as
-`R 2 b3 b3 5 6`, repeating the flat third. This spec uses `R 2 b3 3 5 6`
-(major pentatonic plus the flat third), the standard formula. If the poster
-is correct as printed, this row changes and the corresponding test changes
-with it.
+**Correction to the poster.** The poster's major blues row prints
+`R 2 b3 b3 5 6`, repeating the flat third. Confirmed by the author
+(2026-08-25) as a typo in the poster: the formula is `R 2 b3 3 5 6`, major
+pentatonic plus the flat third. The catalog uses the corrected formula, and
+the formula-coverage test asserts against it rather than against the printed
+row. This is the one place where the poster is not the authority.
 
 The six scales in this family are the non-heptatonic ones. They are the
 reason the chords-in-scale functions return an `Option`.
