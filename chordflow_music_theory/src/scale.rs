@@ -134,6 +134,10 @@ impl ScaleType {
     /// The scale's degrees, spelled. Spelling matters: `#4` and `b5` are the
     /// same fret but different letters, and only the right one makes
     /// `Note::add_interval` produce the correct note name.
+    // rustfmt::skip keeps one scale per line. Reformatted into one interval
+    // per line, this table can no longer be eyeballed against Scales.pdf,
+    // which is the only way a mistyped formula gets caught by a human.
+    #[rustfmt::skip]
     pub fn formula(self) -> Vec<Interval> {
         use Interval::*;
         use ScaleType::*;
@@ -319,6 +323,9 @@ mod tests {
 
     /// Every row of Scales.pdf, transcribed. This table is the oracle for the
     /// whole catalog: if a formula is ever mistyped, this test fails.
+    // Same reason as formula(): one poster row per line, or it stops being
+    // checkable against the PDF.
+    #[rustfmt::skip]
     fn poster() -> Vec<(ScaleType, ScaleFamily, &'static str, &'static str)> {
         vec![
             (ScaleType::Ionian, ScaleFamily::Major, "ionian", "R 2 3 4 5 6 7"),

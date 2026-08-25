@@ -330,19 +330,17 @@ pub fn init_stream() -> Result<Stream> {
 
                     // Only send Tick event and play chord on main beats (not subdivisions)
                     // and not during count-in
-                    if curr_subdiv == 0 {
-                        if !in_count_in {
-                            // Not in count-in, send tick and play chord normally
-                            let _ = AUDIO_EVT.0.try_send(AudioEvent::Tick);
+                    if curr_subdiv == 0 && !in_count_in {
+                        // Not in count-in, send tick and play chord normally
+                        let _ = AUDIO_EVT.0.try_send(AudioEvent::Tick);
 
-                            // Play chord if one is set
-                            if let Some(ref midi_notes) = *chord_clone.lock() {
-                                let chord_volume = AUDIO_SETTINGS.get_chord_volume();
-                                let chord_velocity =
-                                    ((CHORD_VELOCITY as f32) * chord_volume).clamp(0.0, 127.0) as i32;
-                                for &note in midi_notes {
-                                    synth.note_on(CHORD_CHANNEL, note as i32, chord_velocity);
-                                }
+                        // Play chord if one is set
+                        if let Some(ref midi_notes) = *chord_clone.lock() {
+                            let chord_volume = AUDIO_SETTINGS.get_chord_volume();
+                            let chord_velocity =
+                                ((CHORD_VELOCITY as f32) * chord_volume).clamp(0.0, 127.0) as i32;
+                            for &note in midi_notes {
+                                synth.note_on(CHORD_CHANNEL, note as i32, chord_velocity);
                             }
                         }
                     }
