@@ -147,20 +147,24 @@ mod tests {
         let intervals = Interval::iter();
 
         let actual_notes = vec![
-            Note::new(NoteLetter::C, 0),
-            Note::new(NoteLetter::D, -1),
-            Note::new(NoteLetter::D, 0),
-            Note::new(NoteLetter::E, -1),
-            Note::new(NoteLetter::E, 0),
-            Note::new(NoteLetter::F, 0),
-            Note::new(NoteLetter::F, 1),
-            Note::new(NoteLetter::F, 1),
-            Note::new(NoteLetter::G, -1),
-            Note::new(NoteLetter::G, 0),
-            Note::new(NoteLetter::A, -1),
-            Note::new(NoteLetter::A, 0),
-            Note::new(NoteLetter::B, -1),
-            Note::new(NoteLetter::B, 0),
+            Note::new(NoteLetter::C, 0),  // R
+            Note::new(NoteLetter::D, -1), // b2
+            Note::new(NoteLetter::D, 0),  // 2
+            Note::new(NoteLetter::D, 1),  // #2
+            Note::new(NoteLetter::E, -1), // b3
+            Note::new(NoteLetter::E, 0),  // 3
+            Note::new(NoteLetter::F, -1), // b4
+            Note::new(NoteLetter::F, 0),  // 4
+            Note::new(NoteLetter::F, 1),  // #4
+            Note::new(NoteLetter::F, 1),  // tritone, spelled as #4
+            Note::new(NoteLetter::G, -1), // b5
+            Note::new(NoteLetter::G, 0),  // 5
+            Note::new(NoteLetter::G, 1),  // #5
+            Note::new(NoteLetter::A, -1), // b6
+            Note::new(NoteLetter::A, 0),  // 6
+            Note::new(NoteLetter::B, -2), // bb7
+            Note::new(NoteLetter::B, -1), // b7
+            Note::new(NoteLetter::B, 0),  // 7
         ];
 
         for (interval, actual) in intervals.zip(actual_notes) {
