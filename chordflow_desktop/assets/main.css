@@ -880,9 +880,17 @@ input[type="checkbox"]:checked::after {
 .reference-screen {
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
-    padding: 28px 64px 48px;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 64px 0;
     z-index: 2;
+}
+
+/* Only the table scrolls, so the legend stays put at the bottom. */
+.reference-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .reference-controls {
@@ -1020,6 +1028,13 @@ input[type="checkbox"]:checked::after {
 .scale-detail .mono {
     font-family: var(--font-mono);
     font-size: 13px;
+    /* Chord symbols run together at a single space: "B+ C#- D#" reads as one
+       token. Widening the gap separates them without inventing a delimiter. */
+    word-spacing: 0.5em;
+}
+
+.scale-detail .mono {
+    word-spacing: 0.85em;
 }
 
 .scale-row .col-formula {
@@ -1051,4 +1066,49 @@ input[type="checkbox"]:checked::after {
     font-size: 13px;
     line-height: 1.6;
     color: var(--text-secondary);
+}
+
+/* Legend */
+.reference-legend {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 0 18px;
+    margin-top: 8px;
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-color);
+}
+
+.legend-group {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    gap: 12px;
+    align-items: baseline;
+}
+
+.legend-entries {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+}
+
+.legend-entry {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.legend-example {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--secondary-accent-color);
+    min-width: 2ch;
+}
+
+.legend-meaning {
+    font-family: var(--font-main);
+    font-size: 12px;
+    color: var(--text-muted);
 }

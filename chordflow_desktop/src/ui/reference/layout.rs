@@ -7,7 +7,8 @@ use chordflow_music_theory::{
 use dioxus::prelude::*;
 
 use crate::ui::reference::{
-    family_tabs::FamilyTabs, key_selector::KeySelector, scale_table::ScaleTable,
+    family_tabs::FamilyTabs, key_selector::KeySelector, legend::ReferenceLegend,
+    scale_table::ScaleTable,
 };
 
 /// What the reference screen is currently showing. Provided by context at the
@@ -62,7 +63,10 @@ pub fn ReferenceScreen() -> Element {
                 KeySelector {}
                 FamilyTabs {}
             }
-            ScaleTable {}
+            div { class: "reference-scroll",
+                ScaleTable {}
+            }
+            ReferenceLegend {}
         }
     }
 }
