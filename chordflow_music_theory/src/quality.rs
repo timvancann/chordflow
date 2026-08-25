@@ -88,18 +88,19 @@ impl Quality {
     }
 
     pub fn to_intervals(self) -> Vec<Interval> {
+        use Interval::*;
         match self {
-            Quality::Major => Interval::from_semitones([0, 4, 7].to_vec()),
-            Quality::Minor => Interval::from_semitones([0, 3, 7].to_vec()),
-            Quality::Diminished => Interval::from_semitones([0, 3, 6].to_vec()),
-            Quality::Augmented => Interval::from_semitones([0, 4, 8].to_vec()),
-            Quality::Dominant => Interval::from_semitones([0, 4, 7, 10].to_vec()),
-            Quality::MinorSeventh => Interval::from_semitones([0, 3, 7, 10].to_vec()),
-            Quality::MajorSeventh => Interval::from_semitones([0, 4, 7, 11].to_vec()),
-            Quality::HalfDiminished => Interval::from_semitones([0, 3, 6, 10].to_vec()),
-            Quality::DiminishedSeventh => Interval::from_semitones([0, 3, 6, 9].to_vec()),
-            Quality::MinorMajorSeventh => Interval::from_semitones([0, 3, 7, 11].to_vec()),
-            Quality::AugmentedMajorSeventh => Interval::from_semitones([0, 4, 8, 11].to_vec()),
+            Quality::Major => vec![Unison, MajorThird, PerfectFifth],
+            Quality::Minor => vec![Unison, MinorThird, PerfectFifth],
+            Quality::Diminished => vec![Unison, MinorThird, DiminishedFifth],
+            Quality::Augmented => vec![Unison, MajorThird, AugmentedFifth],
+            Quality::Dominant => vec![Unison, MajorThird, PerfectFifth, MinorSeventh],
+            Quality::MajorSeventh => vec![Unison, MajorThird, PerfectFifth, MajorSeventh],
+            Quality::MinorSeventh => vec![Unison, MinorThird, PerfectFifth, MinorSeventh],
+            Quality::HalfDiminished => vec![Unison, MinorThird, DiminishedFifth, MinorSeventh],
+            Quality::DiminishedSeventh => vec![Unison, MinorThird, DiminishedFifth, DiminishedSeventh],
+            Quality::MinorMajorSeventh => vec![Unison, MinorThird, PerfectFifth, MajorSeventh],
+            Quality::AugmentedMajorSeventh => vec![Unison, MajorThird, AugmentedFifth, MajorSeventh],
         }
     }
 
@@ -127,6 +128,8 @@ impl Quality {
 
 #[cfg(test)]
 mod tests {
+    use strum::IntoEnumIterator;
+
     use super::Quality;
 
     #[test]
@@ -166,6 +169,30 @@ mod tests {
         assert_eq!(Quality::from_intervals(vec![0, 5, 7]), None);
         assert_eq!(Quality::from_intervals(vec![0, 1, 4, 6]), None);
         assert_eq!(Quality::from_intervals(vec![]), None);
+    }
+
+    #[test]
+    fn test_to_intervals_semitones_are_unchanged_for_every_quality() {
+        // Guards against the correctly-spelled interval lists silently
+        // drifting away from the semitone sets the audio path relies on.
+        let cases = [
+            (Quality::Major, vec![0, 4, 7]),
+            (Quality::Minor, vec![0, 3, 7]),
+            (Quality::Diminished, vec![0, 3, 6]),
+            (Quality::Augmented, vec![0, 4, 8]),
+            (Quality::Dominant, vec![0, 4, 7, 10]),
+            (Quality::MajorSeventh, vec![0, 4, 7, 11]),
+            (Quality::MinorSeventh, vec![0, 3, 7, 10]),
+            (Quality::HalfDiminished, vec![0, 3, 6, 10]),
+            (Quality::DiminishedSeventh, vec![0, 3, 6, 9]),
+            (Quality::MinorMajorSeventh, vec![0, 3, 7, 11]),
+            (Quality::AugmentedMajorSeventh, vec![0, 4, 8, 11]),
+        ];
+        assert_eq!(cases.len(), Quality::iter().count(), "every Quality variant is covered");
+        for (quality, expected) in cases {
+            let actual: Vec<i32> = quality.to_intervals().iter().map(|i| i.to_semitones()).collect();
+            assert_eq!(actual, expected, "{quality:?} to_intervals semitones");
+        }
     }
 
     #[test]
