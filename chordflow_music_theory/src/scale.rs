@@ -13,6 +13,24 @@ pub enum ScaleFamily {
     Other,
 }
 
+impl Display for ScaleFamily {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.display_name())
+    }
+}
+
+impl ScaleFamily {
+    /// The poster's heading for this family.
+    pub fn display_name(self) -> &'static str {
+        match self {
+            ScaleFamily::Major => "major",
+            ScaleFamily::MelodicMinor => "melodic minor",
+            ScaleFamily::HarmonicMinor => "harmonic minor",
+            ScaleFamily::Other => "other",
+        }
+    }
+}
+
 /// Every scale on the Scales.pdf poster, in the poster's order.
 #[derive(
     Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, EnumCount, FromRepr, Eq,
@@ -33,6 +51,10 @@ pub enum ScaleType {
     LydianDominant,
     MixolydianFlat6,
     AeolianFlat5,
+    /// The only heptatonic scale in the catalog that reuses and skips
+    /// letter names: C altered spells `C Db D# E Gb G# Bb`, with two Ds,
+    /// two Gs, and no A or F. This is correct and faithful to the poster,
+    /// not a spelling bug.
     Altered,
 
     HarmonicMinor,
@@ -237,6 +259,11 @@ impl Scale {
 /// spelling kept is the one whose notes carry the fewest accidentals, with
 /// ties going to the flat. No ranking is applied beyond catalog order:
 /// choosing the "best" scale over a chord is the player's call, not the app's.
+///
+/// Ordering is only a guarantee across scale types (catalog order). Within
+/// one scale type, results follow `generate_all_roots()`'s order (`C C#
+/// D D# Db E Eb F F# G G# Gb A A# Ab B Bb`), which is neither alphabetical
+/// nor circle-of-fifths. Sort if you want a musical order.
 pub fn scales_containing(chord: &Chord) -> Vec<Scale> {
     let wanted: Vec<i32> = chord.to_c_based_semitones();
 
@@ -358,16 +385,36 @@ mod tests {
     }
 
     #[test]
-    fn test_scale_new_reads_the_formula() {
-        let scale = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Lydian);
-        assert_eq!(scale.intervals, ScaleType::Lydian.formula());
-        assert_eq!(scale.root, Note::new(NoteLetter::C, 0));
+    fn test_scale_new_records_the_given_root_and_type_with_a_nonempty_formula() {
+        // `Scale::new` literally assigns `intervals: scale_type.formula()`, so
+        // asserting `intervals == formula()` would be tautological. Instead
+        // assert what actually matters: the constructor records what it was
+        // given, and every catalog variant produces a real formula.
+        let root = Note::new(NoteLetter::C, 0);
+        let scale = Scale::new(root, ScaleType::Lydian);
+        assert_eq!(scale.root, root);
+        assert_eq!(scale.scale_type, ScaleType::Lydian);
+
+        for scale_type in ScaleType::iter() {
+            assert!(
+                !Scale::new(root, scale_type).intervals.is_empty(),
+                "{scale_type} should have a non-empty formula"
+            );
+        }
     }
 
     #[test]
     fn test_display_uses_the_poster_name() {
         let scale = Scale::new(Note::new(NoteLetter::G, 0), ScaleType::LydianDominant);
         assert_eq!(scale.to_string(), "G lydian dominant");
+    }
+
+    #[test]
+    fn test_scale_family_display_uses_the_poster_heading() {
+        assert_eq!(ScaleFamily::Major.to_string(), "major");
+        assert_eq!(ScaleFamily::MelodicMinor.to_string(), "melodic minor");
+        assert_eq!(ScaleFamily::HarmonicMinor.to_string(), "harmonic minor");
+        assert_eq!(ScaleFamily::Other.to_string(), "other");
     }
 
     fn spell(root: (NoteLetter, i32), scale_type: ScaleType) -> String {
@@ -399,6 +446,15 @@ mod tests {
         assert_eq!(
             spell((NoteLetter::C, 0), ScaleType::SuperlocrianDoubleFlat7),
             "C D♭ E♭ F♭ G♭ A♭ B♭♭"
+        );
+    }
+
+    #[test]
+    fn test_spelling_db_aeolian_flat5_spells_the_flat5_as_abb() {
+        // Db aeolian b5 is the other scale that forces a double flat.
+        assert_eq!(
+            spell((NoteLetter::D, -1), ScaleType::AeolianFlat5),
+            "D♭ E♭ F♭ G♭ A♭♭ B♭♭ C♭"
         );
     }
 
@@ -573,19 +629,21 @@ mod tests {
     }
 
     #[test]
+    fn test_prefers_flat_when_accidental_counts_tie() {
+        // F# major is F# A# C#. Both F# ionian and Gb ionian cost 6
+        // accidentals; only sharp_root_penalty breaks the tie, and it must
+        // favour the flat spelling.
+        let f_sharp_major = Chord::new(Note::new(NoteLetter::F, 1), Quality::Major);
+        let scales = scales_containing(&f_sharp_major);
+
+        assert!(contains_scale(&scales, (NoteLetter::G, -1), ScaleType::Ionian));
+        assert!(!contains_scale(&scales, (NoteLetter::F, 1), ScaleType::Ionian));
+    }
+
+    #[test]
     fn test_never_empty_for_any_chord_the_practice_modes_can_produce() {
-        let qualities = [
-            Quality::Major,
-            Quality::Minor,
-            Quality::Diminished,
-            Quality::Augmented,
-            Quality::Dominant,
-            Quality::MajorSeventh,
-            Quality::MinorSeventh,
-            Quality::HalfDiminished,
-        ];
         for root in crate::note::generate_all_roots() {
-            for quality in qualities {
+            for quality in Quality::iter() {
                 let chord = Chord::new(root, quality);
                 assert!(
                     !scales_containing(&chord).is_empty(),
