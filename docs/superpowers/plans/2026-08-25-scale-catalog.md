@@ -1155,13 +1155,14 @@ Add inside `mod tests` in `chordflow_music_theory/src/scale.rs`:
 
     #[test]
     fn test_prefers_the_simpler_spelling() {
-        // F7 lives in Bb mixolydian. The A# spelling of the same pitch class
-        // needs far more accidentals, so it must lose.
+        // F7 is F A C Eb, so it lives in Bb ionian (F is its fifth degree).
+        // A# ionian is the same pitch classes spelled with far more
+        // accidentals, so the tiebreak must reject it.
         let f7 = Chord::new(Note::new(NoteLetter::F, 0), Quality::Dominant);
         let scales = scales_containing(&f7);
 
-        assert!(contains_scale(&scales, (NoteLetter::B, -1), ScaleType::Mixolydian));
-        assert!(!contains_scale(&scales, (NoteLetter::A, 1), ScaleType::Mixolydian));
+        assert!(contains_scale(&scales, (NoteLetter::B, -1), ScaleType::Ionian));
+        assert!(!contains_scale(&scales, (NoteLetter::A, 1), ScaleType::Ionian));
     }
 
     #[test]
