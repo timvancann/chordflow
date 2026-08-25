@@ -9,7 +9,12 @@ use rustysynth::{SoundFont, Synthesizer, SynthesizerSettings};
 
 /// Channel 0 carries melodic content; the metronome uses the percussion channel.
 const CHORD_CHANNEL: i32 = 0;
+/// Chords played by the metronome sit underneath the click, so they are struck
+/// softly on purpose.
 const CHORD_VELOCITY: i32 = 80;
+/// A chord auditioned from the reference screen is the only thing sounding, so
+/// it is struck harder. Both are still scaled by the user's chord volume.
+const CHORD_AUDITION_VELOCITY: i32 = 112;
 use std::{
     fs::File,
     path::PathBuf,
@@ -236,8 +241,8 @@ pub fn init_stream() -> Result<Stream> {
                     }
                     AudioCommand::PlayChordNow(notes) => {
                         let chord_volume = AUDIO_SETTINGS.get_chord_volume();
-                        let velocity =
-                            ((CHORD_VELOCITY as f32) * chord_volume).clamp(0.0, 127.0) as i32;
+                        let velocity = ((CHORD_AUDITION_VELOCITY as f32) * chord_volume)
+                            .clamp(0.0, 127.0) as i32;
 
                         let mut synth = synth_cmd.lock();
                         // Release whatever is still ringing on this channel, or
