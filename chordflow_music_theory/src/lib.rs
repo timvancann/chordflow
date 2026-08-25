@@ -5,4 +5,3 @@ pub mod note;
 pub mod quality;
 pub mod scale;
 pub mod util;
-

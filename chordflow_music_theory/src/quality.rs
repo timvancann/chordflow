@@ -98,9 +98,13 @@ impl Quality {
             Quality::MajorSeventh => vec![Unison, MajorThird, PerfectFifth, MajorSeventh],
             Quality::MinorSeventh => vec![Unison, MinorThird, PerfectFifth, MinorSeventh],
             Quality::HalfDiminished => vec![Unison, MinorThird, DiminishedFifth, MinorSeventh],
-            Quality::DiminishedSeventh => vec![Unison, MinorThird, DiminishedFifth, DiminishedSeventh],
+            Quality::DiminishedSeventh => {
+                vec![Unison, MinorThird, DiminishedFifth, DiminishedSeventh]
+            }
             Quality::MinorMajorSeventh => vec![Unison, MinorThird, PerfectFifth, MajorSeventh],
-            Quality::AugmentedMajorSeventh => vec![Unison, MajorThird, AugmentedFifth, MajorSeventh],
+            Quality::AugmentedMajorSeventh => {
+                vec![Unison, MajorThird, AugmentedFifth, MajorSeventh]
+            }
         }
     }
 
@@ -170,8 +174,11 @@ mod tests {
                 Some(quality),
                 "{semitones:?} should name {quality:?}"
             );
-            let round_tripped: Vec<i32> =
-                quality.to_intervals().iter().map(|i| i.to_semitones()).collect();
+            let round_tripped: Vec<i32> = quality
+                .to_intervals()
+                .iter()
+                .map(|i| i.to_semitones())
+                .collect();
             assert_eq!(round_tripped, semitones, "{quality:?} to_intervals");
         }
     }
@@ -180,7 +187,10 @@ mod tests {
     fn test_augmented_triad_is_recognised() {
         // Regression: this used to be mapped from [0, 5, 7], which is a sus4,
         // and to_intervals disagreed with from_intervals as a result.
-        assert_eq!(Quality::from_intervals(vec![0, 4, 8]), Some(Quality::Augmented));
+        assert_eq!(
+            Quality::from_intervals(vec![0, 4, 8]),
+            Some(Quality::Augmented)
+        );
         let augmented: Vec<i32> = Quality::Augmented
             .to_intervals()
             .iter()
@@ -213,9 +223,17 @@ mod tests {
             (Quality::MinorMajorSeventh, vec![0, 3, 7, 11]),
             (Quality::AugmentedMajorSeventh, vec![0, 4, 8, 11]),
         ];
-        assert_eq!(cases.len(), Quality::iter().count(), "every Quality variant is covered");
+        assert_eq!(
+            cases.len(),
+            Quality::iter().count(),
+            "every Quality variant is covered"
+        );
         for (quality, expected) in cases {
-            let actual: Vec<i32> = quality.to_intervals().iter().map(|i| i.to_semitones()).collect();
+            let actual: Vec<i32> = quality
+                .to_intervals()
+                .iter()
+                .map(|i| i.to_semitones())
+                .collect();
             assert_eq!(actual, expected, "{quality:?} to_intervals semitones");
         }
     }
@@ -224,10 +242,25 @@ mod tests {
     fn test_existing_qualities_still_map() {
         assert_eq!(Quality::from_intervals(vec![0, 4, 7]), Some(Quality::Major));
         assert_eq!(Quality::from_intervals(vec![0, 3, 7]), Some(Quality::Minor));
-        assert_eq!(Quality::from_intervals(vec![0, 3, 6]), Some(Quality::Diminished));
-        assert_eq!(Quality::from_intervals(vec![0, 4, 7, 10]), Some(Quality::Dominant));
-        assert_eq!(Quality::from_intervals(vec![0, 3, 7, 10]), Some(Quality::MinorSeventh));
-        assert_eq!(Quality::from_intervals(vec![0, 4, 7, 11]), Some(Quality::MajorSeventh));
-        assert_eq!(Quality::from_intervals(vec![0, 3, 6, 10]), Some(Quality::HalfDiminished));
+        assert_eq!(
+            Quality::from_intervals(vec![0, 3, 6]),
+            Some(Quality::Diminished)
+        );
+        assert_eq!(
+            Quality::from_intervals(vec![0, 4, 7, 10]),
+            Some(Quality::Dominant)
+        );
+        assert_eq!(
+            Quality::from_intervals(vec![0, 3, 7, 10]),
+            Some(Quality::MinorSeventh)
+        );
+        assert_eq!(
+            Quality::from_intervals(vec![0, 4, 7, 11]),
+            Some(Quality::MajorSeventh)
+        );
+        assert_eq!(
+            Quality::from_intervals(vec![0, 3, 6, 10]),
+            Some(Quality::HalfDiminished)
+        );
     }
 }

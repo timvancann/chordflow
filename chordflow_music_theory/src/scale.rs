@@ -32,9 +32,7 @@ impl ScaleFamily {
 }
 
 /// Every scale on the Scales.pdf poster, in the poster's order.
-#[derive(
-    Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, EnumCount, FromRepr, Eq,
-)]
+#[derive(Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, EnumCount, FromRepr, Eq)]
 pub enum ScaleType {
     #[default]
     Ionian,
@@ -88,10 +86,13 @@ impl ScaleType {
             }
             MelodicMinor | DorianFlat2 | LydianAugmented | LydianDominant | MixolydianFlat6
             | AeolianFlat5 | Altered => ScaleFamily::MelodicMinor,
-            HarmonicMinor | LocrianNatural6 | IonianAugmented | LocrianSharp4
-            | PhrygianDominant | LydianSharp9 | SuperlocrianDoubleFlat7 => {
-                ScaleFamily::HarmonicMinor
-            }
+            HarmonicMinor
+            | LocrianNatural6
+            | IonianAugmented
+            | LocrianSharp4
+            | PhrygianDominant
+            | LydianSharp9
+            | SuperlocrianDoubleFlat7 => ScaleFamily::HarmonicMinor,
             MajorBlues | MinorBlues | WholeTone | Augmented | DiminishedHalfWhole
             | DiminishedWholeHalf => ScaleFamily::Other,
         }
@@ -289,11 +290,9 @@ pub fn scales_containing(chord: &Chord) -> Vec<Scale> {
             let cost = spelling_cost(&notes);
             let pitch_class = root.to_semitones().rem_euclid(12);
 
-            match best
-                .iter()
-                .position(|(s, _)| s.scale_type == scale_type
-                    && s.root.to_semitones().rem_euclid(12) == pitch_class)
-            {
+            match best.iter().position(|(s, _)| {
+                s.scale_type == scale_type && s.root.to_semitones().rem_euclid(12) == pitch_class
+            }) {
                 Some(index) if cost < best[index].1 => best[index] = (scale, cost),
                 Some(_) => {}
                 None => best.push((scale, cost)),
@@ -435,16 +434,31 @@ mod tests {
 
     #[test]
     fn test_spelling_in_easy_keys() {
-        assert_eq!(spell((NoteLetter::C, 0), ScaleType::Ionian), "C D E F G A B");
-        assert_eq!(spell((NoteLetter::G, 0), ScaleType::Lydian), "G A B C♯ D E F♯");
-        assert_eq!(spell((NoteLetter::D, 0), ScaleType::Dorian), "D E F G A B C");
-        assert_eq!(spell((NoteLetter::A, 0), ScaleType::HarmonicMinor), "A B C D E F G♯");
+        assert_eq!(
+            spell((NoteLetter::C, 0), ScaleType::Ionian),
+            "C D E F G A B"
+        );
+        assert_eq!(
+            spell((NoteLetter::G, 0), ScaleType::Lydian),
+            "G A B C♯ D E F♯"
+        );
+        assert_eq!(
+            spell((NoteLetter::D, 0), ScaleType::Dorian),
+            "D E F G A B C"
+        );
+        assert_eq!(
+            spell((NoteLetter::A, 0), ScaleType::HarmonicMinor),
+            "A B C D E F G♯"
+        );
     }
 
     #[test]
     fn test_spelling_needs_sharps_that_look_wrong_but_are_right() {
         // F# major really does contain E#, not F.
-        assert_eq!(spell((NoteLetter::F, 1), ScaleType::Ionian), "F♯ G♯ A♯ B C♯ D♯ E♯");
+        assert_eq!(
+            spell((NoteLetter::F, 1), ScaleType::Ionian),
+            "F♯ G♯ A♯ B C♯ D♯ E♯"
+        );
     }
 
     #[test]
@@ -507,7 +521,10 @@ mod tests {
     #[test]
     fn test_sevenths_of_c_major() {
         let scale = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Ionian);
-        assert_eq!(chord_symbols(scale.diatonic_sevenths()), "CΔ D-7 E-7 FΔ G7 A-7 Bø");
+        assert_eq!(
+            chord_symbols(scale.diatonic_sevenths()),
+            "CΔ D-7 E-7 FΔ G7 A-7 Bø"
+        );
     }
 
     #[test]
@@ -594,9 +611,21 @@ mod tests {
         let cmaj7 = Chord::new(Note::new(NoteLetter::C, 0), Quality::MajorSeventh);
         let scales = scales_containing(&cmaj7);
 
-        assert!(contains_scale(&scales, (NoteLetter::C, 0), ScaleType::Ionian));
-        assert!(contains_scale(&scales, (NoteLetter::C, 0), ScaleType::Lydian));
-        assert!(contains_scale(&scales, (NoteLetter::G, 0), ScaleType::Ionian));
+        assert!(contains_scale(
+            &scales,
+            (NoteLetter::C, 0),
+            ScaleType::Ionian
+        ));
+        assert!(contains_scale(
+            &scales,
+            (NoteLetter::C, 0),
+            ScaleType::Lydian
+        ));
+        assert!(contains_scale(
+            &scales,
+            (NoteLetter::G, 0),
+            ScaleType::Ionian
+        ));
     }
 
     #[test]
@@ -605,7 +634,11 @@ mod tests {
         let scales = scales_containing(&cmaj7);
 
         // C phrygian has Eb and Bb; it cannot host a C major seventh.
-        assert!(!contains_scale(&scales, (NoteLetter::C, 0), ScaleType::Phrygian));
+        assert!(!contains_scale(
+            &scales,
+            (NoteLetter::C, 0),
+            ScaleType::Phrygian
+        ));
     }
 
     #[test]
@@ -631,8 +664,16 @@ mod tests {
         let f7 = Chord::new(Note::new(NoteLetter::F, 0), Quality::Dominant);
         let scales = scales_containing(&f7);
 
-        assert!(contains_scale(&scales, (NoteLetter::B, -1), ScaleType::Ionian));
-        assert!(!contains_scale(&scales, (NoteLetter::A, 1), ScaleType::Ionian));
+        assert!(contains_scale(
+            &scales,
+            (NoteLetter::B, -1),
+            ScaleType::Ionian
+        ));
+        assert!(!contains_scale(
+            &scales,
+            (NoteLetter::A, 1),
+            ScaleType::Ionian
+        ));
     }
 
     #[test]
@@ -643,8 +684,16 @@ mod tests {
         let f_sharp_major = Chord::new(Note::new(NoteLetter::F, 1), Quality::Major);
         let scales = scales_containing(&f_sharp_major);
 
-        assert!(contains_scale(&scales, (NoteLetter::G, -1), ScaleType::Ionian));
-        assert!(!contains_scale(&scales, (NoteLetter::F, 1), ScaleType::Ionian));
+        assert!(contains_scale(
+            &scales,
+            (NoteLetter::G, -1),
+            ScaleType::Ionian
+        ));
+        assert!(!contains_scale(
+            &scales,
+            (NoteLetter::F, 1),
+            ScaleType::Ionian
+        ));
     }
 
     #[test]

@@ -2,10 +2,7 @@
 
 use dioxus::prelude::*;
 
-use crate::{
-    ui::app::MetronomeState,
-    AudioCommand, AUDIO_CMD,
-};
+use crate::{ui::app::MetronomeState, AudioCommand, AUDIO_CMD};
 
 pub fn BeatControl() -> Element {
     let mut state: Signal<MetronomeState> = use_context();

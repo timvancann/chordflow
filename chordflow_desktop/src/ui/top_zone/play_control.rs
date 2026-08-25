@@ -9,7 +9,10 @@ use dioxus_free_icons::{
     Icon,
 };
 
-use crate::{ui::app::{AppState, MetronomeState}, AudioCommand, AUDIO_CMD};
+use crate::{
+    ui::app::{AppState, MetronomeState},
+    AudioCommand, AUDIO_CMD,
+};
 
 pub fn PlayControl() -> Element {
     let mut app_state: Signal<AppState> = use_context();

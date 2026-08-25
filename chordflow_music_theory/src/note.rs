@@ -113,8 +113,9 @@ impl Note {
     }
 
     pub fn add_interval(&self, interval: Interval) -> Note {
-        let new_semitones = (self.letter.to_semitones() + self.accidentals + interval.to_semitones())
-            .rem_euclid(12);
+        let new_semitones =
+            (self.letter.to_semitones() + self.accidentals + interval.to_semitones())
+                .rem_euclid(12);
         let new_letter_index = (self.letter.to_index() + interval.to_index()) % 7;
         let new_letter = NoteLetter::from_letter_index(new_letter_index);
 

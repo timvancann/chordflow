@@ -10,7 +10,7 @@ use std::{
     fs::File,
     path::PathBuf,
     sync::{
-        atomic::{AtomicBool, AtomicU8, AtomicU16, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU16, AtomicU64, AtomicU8, Ordering},
         Arc,
     },
 };
@@ -242,8 +242,8 @@ pub fn init_stream() -> Result<Stream> {
 
     // Different click sounds for different beat types
     // Using woodblock and sidestick sounds from General MIDI percussion
-    const CLICK_ACCENT: i32 = 76;     // Hi wood block - for downbeat (first beat of bar)
-    const CLICK_NORMAL: i32 = 77;     // Low wood block - for regular beats
+    const CLICK_ACCENT: i32 = 76; // Hi wood block - for downbeat (first beat of bar)
+    const CLICK_NORMAL: i32 = 77; // Low wood block - for regular beats
     const CLICK_SUBDIVISION: i32 = 37; // Side stick - for subdivisions
 
     // Velocities for different beat types
@@ -320,7 +320,8 @@ pub fn init_stream() -> Result<Stream> {
                     };
 
                     // Apply volume and clamp to valid MIDI velocity range (0-127)
-                    let velocity = ((base_velocity as f32) * volume_multiplier).clamp(0.0, 127.0) as i32;
+                    let velocity =
+                        ((base_velocity as f32) * volume_multiplier).clamp(0.0, 127.0) as i32;
 
                     // Trigger click sound
                     synth.note_on(PERCUSSION_CHANNEL, note, velocity);

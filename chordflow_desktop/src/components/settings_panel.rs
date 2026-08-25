@@ -6,7 +6,8 @@ use crate::audio::settings::AUDIO_SETTINGS;
 pub fn SettingsPanel(show: Signal<bool>) -> Element {
     let mut metronome_accent = use_signal(|| AUDIO_SETTINGS.get_metronome_accent_volume());
     let mut metronome_beat = use_signal(|| AUDIO_SETTINGS.get_metronome_beat_volume());
-    let mut metronome_subdivision = use_signal(|| AUDIO_SETTINGS.get_metronome_subdivision_volume());
+    let mut metronome_subdivision =
+        use_signal(|| AUDIO_SETTINGS.get_metronome_subdivision_volume());
     let mut chord_volume = use_signal(|| AUDIO_SETTINGS.get_chord_volume());
 
     if !show() {
@@ -95,11 +96,7 @@ pub fn SettingsPanel(show: Signal<bool>) -> Element {
 }
 
 #[component]
-fn VolumeSlider(
-    label: String,
-    value: Signal<f32>,
-    on_change: EventHandler<f32>,
-) -> Element {
+fn VolumeSlider(label: String, value: Signal<f32>, on_change: EventHandler<f32>) -> Element {
     let percentage = (value() * 100.0) as i32;
 
     rsx! {

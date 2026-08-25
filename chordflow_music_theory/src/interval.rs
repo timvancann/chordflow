@@ -2,9 +2,7 @@ use std::fmt::Display;
 
 use strum::{AsRefStr, EnumCount, EnumIter, FromRepr};
 
-#[derive(
-    Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, EnumCount, FromRepr, Eq,
-)]
+#[derive(Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, EnumCount, FromRepr, Eq)]
 pub enum Interval {
     #[default]
     Unison,
