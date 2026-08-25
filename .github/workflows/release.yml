@@ -22,7 +22,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install Dioxus CLI
-        run: cargo install dioxus-cli
+        run: cargo install dioxus-cli --locked
 
       - name: Build macOS Bundle
         run: cd chordflow_desktop && dx bundle --release --platform desktop
