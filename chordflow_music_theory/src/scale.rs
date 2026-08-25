@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use strum::{AsRefStr, EnumCount, EnumIter, FromRepr};
+use strum::{AsRefStr, EnumCount, EnumIter, FromRepr, IntoEnumIterator};
 
 use super::{chord::Chord, interval::Interval, note::Note, quality::Quality};
 
@@ -228,6 +228,60 @@ impl Scale {
     }
 }
 
+/// Every catalog scale that contains all of `chord`'s notes, in catalog
+/// order. This is the reverse of every other lookup in this module: given a
+/// chord, what can be played over it?
+///
+/// Results are one scale per `(scale_type, root pitch class)`. `generate_all_roots`
+/// returns 17 spellings rather than 12, so C# and Db both appear; the
+/// spelling kept is the one whose notes carry the fewest accidentals, with
+/// ties going to the flat. No ranking is applied beyond catalog order:
+/// choosing the "best" scale over a chord is the player's call, not the app's.
+pub fn scales_containing(chord: &Chord) -> Vec<Scale> {
+    let wanted: Vec<i32> = chord.to_c_based_semitones();
+
+    let mut best: Vec<(Scale, i32)> = Vec::new();
+
+    for scale_type in ScaleType::iter() {
+        for root in crate::note::generate_all_roots() {
+            let scale = Scale::new(root, scale_type);
+            let notes = scale.notes();
+            let pitch_classes: Vec<i32> = notes
+                .iter()
+                .map(|n| n.to_semitones().rem_euclid(12))
+                .collect();
+
+            if !wanted.iter().all(|w| pitch_classes.contains(w)) {
+                continue;
+            }
+
+            let cost = spelling_cost(&notes);
+            let pitch_class = root.to_semitones().rem_euclid(12);
+
+            match best
+                .iter()
+                .position(|(s, _)| s.scale_type == scale_type
+                    && s.root.to_semitones().rem_euclid(12) == pitch_class)
+            {
+                Some(index) if cost < best[index].1 => best[index] = (scale, cost),
+                Some(_) => {}
+                None => best.push((scale, cost)),
+            }
+        }
+    }
+
+    best.into_iter().map(|(scale, _)| scale).collect()
+}
+
+/// Total accidentals across a scale's notes, plus one if the root is sharp.
+/// The tiebreaker biases toward flat spellings, which read better for the
+/// keys guitarists actually use (Bb mixolydian, not A# mixolydian).
+fn spelling_cost(notes: &[Note]) -> i32 {
+    let accidentals: i32 = notes.iter().map(|n| n.accidentals.abs()).sum();
+    let sharp_root_penalty = i32::from(notes[0].accidentals > 0);
+    accidentals * 2 + sharp_root_penalty
+}
+
 #[cfg(test)]
 mod tests {
     use strum::IntoEnumIterator;
@@ -449,5 +503,95 @@ mod tests {
                 "{scale_type} sevenths should name a quality at every degree"
             );
         }
+    }
+
+    use crate::chord::Chord;
+    use crate::quality::Quality;
+
+    use super::scales_containing;
+
+    fn contains_scale(scales: &[Scale], root: (NoteLetter, i32), scale_type: ScaleType) -> bool {
+        scales
+            .iter()
+            .any(|s| s.root == Note::new(root.0, root.1) && s.scale_type == scale_type)
+    }
+
+    #[test]
+    fn test_finds_the_obvious_homes_of_c_major_seventh() {
+        let cmaj7 = Chord::new(Note::new(NoteLetter::C, 0), Quality::MajorSeventh);
+        let scales = scales_containing(&cmaj7);
+
+        assert!(contains_scale(&scales, (NoteLetter::C, 0), ScaleType::Ionian));
+        assert!(contains_scale(&scales, (NoteLetter::C, 0), ScaleType::Lydian));
+        assert!(contains_scale(&scales, (NoteLetter::G, 0), ScaleType::Ionian));
+    }
+
+    #[test]
+    fn test_excludes_scales_that_do_not_contain_the_chord() {
+        let cmaj7 = Chord::new(Note::new(NoteLetter::C, 0), Quality::MajorSeventh);
+        let scales = scales_containing(&cmaj7);
+
+        // C phrygian has Eb and Bb; it cannot host a C major seventh.
+        assert!(!contains_scale(&scales, (NoteLetter::C, 0), ScaleType::Phrygian));
+    }
+
+    #[test]
+    fn test_results_are_deduplicated_by_pitch_class() {
+        let cmaj7 = Chord::new(Note::new(NoteLetter::C, 0), Quality::MajorSeventh);
+        let scales = scales_containing(&cmaj7);
+
+        let mut seen: Vec<(ScaleType, i32)> = scales
+            .iter()
+            .map(|s| (s.scale_type, s.root.to_semitones().rem_euclid(12)))
+            .collect();
+        let before = seen.len();
+        seen.sort_by_key(|(t, pc)| (*t as usize, *pc));
+        seen.dedup();
+        assert_eq!(before, seen.len(), "no scale should appear twice");
+    }
+
+    #[test]
+    fn test_prefers_the_simpler_spelling() {
+        // F7 is F A C Eb, so it lives in Bb ionian (F is its fifth degree).
+        // A# ionian is the same pitch classes spelled with far more
+        // accidentals, so the tiebreak must reject it.
+        let f7 = Chord::new(Note::new(NoteLetter::F, 0), Quality::Dominant);
+        let scales = scales_containing(&f7);
+
+        assert!(contains_scale(&scales, (NoteLetter::B, -1), ScaleType::Ionian));
+        assert!(!contains_scale(&scales, (NoteLetter::A, 1), ScaleType::Ionian));
+    }
+
+    #[test]
+    fn test_never_empty_for_any_chord_the_practice_modes_can_produce() {
+        let qualities = [
+            Quality::Major,
+            Quality::Minor,
+            Quality::Diminished,
+            Quality::Augmented,
+            Quality::Dominant,
+            Quality::MajorSeventh,
+            Quality::MinorSeventh,
+            Quality::HalfDiminished,
+        ];
+        for root in crate::note::generate_all_roots() {
+            for quality in qualities {
+                let chord = Chord::new(root, quality);
+                assert!(
+                    !scales_containing(&chord).is_empty(),
+                    "follow mode would render an empty panel for {chord}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_results_come_back_in_catalog_order() {
+        let c = Chord::new(Note::new(NoteLetter::C, 0), Quality::Major);
+        let scales = scales_containing(&c);
+        let order: Vec<usize> = scales.iter().map(|s| s.scale_type as usize).collect();
+        let mut sorted = order.clone();
+        sorted.sort();
+        assert_eq!(order, sorted, "results must be grouped by catalog position");
     }
 }
