@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use strum::{AsRefStr, EnumCount, EnumIter, FromRepr};
 
-use super::{interval::Interval, note::Note};
+use super::{chord::Chord, interval::Interval, note::Note, quality::Quality};
 
 /// The four groupings used on the Scales.pdf poster.
 #[derive(Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, Eq)]
@@ -181,6 +181,48 @@ impl Scale {
             .map(|interval| self.root.add_interval(*interval))
             .collect()
     }
+
+    /// The triads built by stacking thirds on each degree, or `None` if this
+    /// scale does not have seven notes (stacking by scale index has no
+    /// accepted meaning for the blues, whole tone, augmented, and diminished
+    /// scales).
+    pub fn diatonic_triads(&self) -> Option<Vec<Chord>> {
+        self.stacked_chords(&[0, 2, 4])
+    }
+
+    /// The seventh chords built by stacking thirds on each degree. Same
+    /// `None` condition as `diatonic_triads`.
+    pub fn diatonic_sevenths(&self) -> Option<Vec<Chord>> {
+        self.stacked_chords(&[0, 2, 4, 6])
+    }
+
+    /// Builds one chord per degree by taking the scale members at the given
+    /// index offsets. Degrees whose interval set no `Quality` names are
+    /// skipped: a missing chord symbol is better than a wrong one, and the
+    /// exotic scales produce several sets that no symbol describes.
+    fn stacked_chords(&self, offsets: &[usize]) -> Option<Vec<Chord>> {
+        if self.intervals.len() != 7 {
+            return None;
+        }
+
+        let notes = self.notes();
+        let chords = (0..7)
+            .filter_map(|degree| {
+                let members: Vec<i32> = offsets
+                    .iter()
+                    .map(|offset| self.intervals[(degree + offset) % 7].to_semitones())
+                    .collect();
+                let root_semitones = members[0];
+                let relative: Vec<i32> = members
+                    .iter()
+                    .map(|s| (s - root_semitones).rem_euclid(12))
+                    .collect();
+                Quality::from_intervals(relative).map(|q| Chord::new(notes[degree], q))
+            })
+            .collect();
+
+        Some(chords)
+    }
 }
 
 #[cfg(test)]
@@ -314,6 +356,85 @@ mod tests {
                     "{root} {scale_type}"
                 );
             }
+        }
+    }
+
+    fn chord_symbols(chords: Option<Vec<crate::chord::Chord>>) -> String {
+        chords
+            .expect("expected a heptatonic scale")
+            .iter()
+            .map(|c| c.to_string())
+            .collect::<Vec<String>>()
+            .join(" ")
+    }
+
+    #[test]
+    fn test_triads_of_c_major() {
+        let scale = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Ionian);
+        assert_eq!(chord_symbols(scale.diatonic_triads()), "C D- E- F G A- Bo");
+    }
+
+    #[test]
+    fn test_sevenths_of_c_major() {
+        let scale = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Ionian);
+        assert_eq!(chord_symbols(scale.diatonic_sevenths()), "CΔ D-7 E-7 FΔ G7 A-7 Bø");
+    }
+
+    #[test]
+    fn test_harmonic_minor_third_degree_is_augmented() {
+        // This is the case that panics under the pre-Task-2 from_intervals.
+        let scale = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::HarmonicMinor);
+        let triads = scale.diatonic_triads().expect("heptatonic");
+        assert_eq!(triads[2].quality, crate::quality::Quality::Augmented);
+        assert_eq!(triads[2].root, Note::new(NoteLetter::E, -1));
+    }
+
+    #[test]
+    fn test_the_three_new_qualities_have_producers() {
+        use crate::quality::Quality;
+
+        let melodic = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::MelodicMinor);
+        assert_eq!(
+            melodic.diatonic_sevenths().expect("heptatonic")[0].quality,
+            Quality::MinorMajorSeventh
+        );
+
+        let harmonic = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::HarmonicMinor);
+        assert_eq!(
+            harmonic.diatonic_sevenths().expect("heptatonic")[6].quality,
+            Quality::DiminishedSeventh
+        );
+
+        let lydian_aug = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::LydianAugmented);
+        assert_eq!(
+            lydian_aug.diatonic_sevenths().expect("heptatonic")[0].quality,
+            Quality::AugmentedMajorSeventh
+        );
+    }
+
+    #[test]
+    fn test_non_heptatonic_scales_have_no_diatonic_chords() {
+        let non_heptatonic = [
+            ScaleType::MajorBlues,
+            ScaleType::MinorBlues,
+            ScaleType::WholeTone,
+            ScaleType::Augmented,
+            ScaleType::DiminishedHalfWhole,
+            ScaleType::DiminishedWholeHalf,
+        ];
+        for scale_type in non_heptatonic {
+            let scale = Scale::new(Note::new(NoteLetter::C, 0), scale_type);
+            assert!(scale.diatonic_triads().is_none(), "{scale_type} triads");
+            assert!(scale.diatonic_sevenths().is_none(), "{scale_type} sevenths");
+        }
+    }
+
+    #[test]
+    fn test_every_heptatonic_scale_derives_chords_without_panicking() {
+        for scale_type in ScaleType::iter().filter(|t| t.formula().len() == 7) {
+            let scale = Scale::new(Note::new(NoteLetter::C, 0), scale_type);
+            assert!(scale.diatonic_triads().is_some(), "{scale_type} triads");
+            assert!(scale.diatonic_sevenths().is_some(), "{scale_type} sevenths");
         }
     }
 }

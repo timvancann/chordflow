@@ -24,10 +24,7 @@ impl DiatonicConfig {
 
     fn preview_next_chord(&self) -> Chord {
         let interval = next_diatonic_scale_interval(self.is_random, &self.scale, &Interval::Unison);
-        let quality = calculate_chord_quality_in_scale(&self.scale, &interval);
-
-        let next_note = self.scale.root.add_interval(interval);
-        Chord::new(next_note, quality)
+        self.chord_at(interval)
     }
 
     pub fn reset(&mut self) {
@@ -39,15 +36,25 @@ impl DiatonicConfig {
         self.current_chord = self.next_chord;
         let interval =
             next_diatonic_scale_interval(self.is_random, &self.scale, &self.next_scale_interval);
-        let quality = calculate_chord_quality_in_scale(&self.scale, &interval);
-
-        let next_note = self.scale.root.add_interval(interval);
         self.next_scale_interval = interval;
-        self.next_chord = Chord::new(next_note, quality);
+        self.next_chord = self.chord_at(interval);
     }
 
     pub fn get_chords(&self) -> (String, String) {
         (self.current_chord.to_string(), self.next_chord.to_string())
+    }
+
+    /// The diatonic triad on the degree at `interval` within the current scale.
+    fn chord_at(&self, interval: Interval) -> Chord {
+        let degree = self
+            .scale
+            .intervals
+            .iter()
+            .position(|i| *i == interval)
+            .expect("interval came from this scale");
+        self.scale
+            .diatonic_triads()
+            .expect("the diatonic practice mode always uses a seven-note scale")[degree]
     }
 }
 
@@ -81,25 +88,4 @@ fn next_diatonic_scale_interval(
         let next_index = (index + 1) % scale.intervals.len();
         scale.intervals[next_index]
     }
-}
-
-fn calculate_chord_quality_in_scale(scale: &Scale, interval: &Interval) -> Quality {
-    let new_scale_index = scale.intervals.iter().position(|f| f == interval).unwrap() as i32;
-    let new_chord_indexes: Vec<i32> =
-        vec![new_scale_index, new_scale_index + 2, new_scale_index + 4]
-            .into_iter()
-            .map(|i| normalize(i, 7))
-            .map(|i| scale.intervals[i as usize].to_semitones())
-            .collect();
-    let zero_based_chord_indexes = new_chord_indexes
-        .iter()
-        .map(|i| normalize(i - new_chord_indexes[0], 12))
-        .collect::<Vec<i32>>();
-    Quality::from_intervals(zero_based_chord_indexes.clone()).unwrap_or_else(|| {
-        panic!("no chord quality names the interval set {zero_based_chord_indexes:?}")
-    })
-}
-
-fn normalize(interval: i32, base: i32) -> i32 {
-    (interval + base) % base
 }
