@@ -403,15 +403,25 @@ mod tests {
     }
 
     #[test]
-    fn test_every_scale_spells_in_every_root_without_panicking() {
+    fn test_every_scale_note_is_the_right_pitch_class_and_sanely_spelled() {
         for root in crate::note::generate_all_roots() {
             for scale_type in ScaleType::iter() {
                 let scale = Scale::new(root, scale_type);
-                assert_eq!(
-                    scale.notes().len(),
-                    scale_type.formula().len(),
-                    "{root} {scale_type}"
-                );
+                let root_pitch_class = root.to_semitones().rem_euclid(12);
+
+                for (note, interval) in scale.notes().iter().zip(scale_type.formula()) {
+                    let expected_pitch_class =
+                        (root_pitch_class + interval.to_semitones()).rem_euclid(12);
+                    assert_eq!(
+                        note.to_semitones().rem_euclid(12),
+                        expected_pitch_class,
+                        "{root} {scale_type}: {note} should be pitch class {expected_pitch_class}"
+                    );
+                    assert!(
+                        note.accidentals.abs() <= 2,
+                        "{root} {scale_type}: {note} has an unreasonable number of accidentals"
+                    );
+                }
             }
         }
     }
