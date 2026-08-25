@@ -983,7 +983,7 @@ input[type="checkbox"]:checked::after {
 .scale-table-head,
 .scale-row {
     display: grid;
-    grid-template-columns: 190px minmax(220px, 1fr) minmax(220px, 1fr);
+    grid-template-columns: 16px 190px minmax(220px, 1fr) minmax(220px, 1fr);
     gap: 24px;
     align-items: baseline;
     text-align: left;
@@ -1043,7 +1043,7 @@ input[type="checkbox"]:checked::after {
 
 /* Expanded chord detail */
 .scale-detail {
-    padding: 4px 12px 16px 202px;
+    padding: 4px 12px 16px 242px;
     background: rgba(0, 217, 255, 0.06);
     border-bottom: 1px solid var(--border-subtle);
 }
@@ -1111,4 +1111,23 @@ input[type="checkbox"]:checked::after {
     font-family: var(--font-main);
     font-size: 12px;
     color: var(--text-muted);
+}
+
+/* Accordion affordance: the rows are expandable, so say so. */
+.col-chevron {
+    display: inline-block;
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1;
+    transition: transform 0.15s ease, color 0.15s;
+    transform-origin: 50% 50%;
+}
+
+.scale-row:hover .col-chevron {
+    color: var(--text-secondary);
+}
+
+.scale-row.open .col-chevron {
+    transform: rotate(90deg);
+    color: var(--accent-color);
 }

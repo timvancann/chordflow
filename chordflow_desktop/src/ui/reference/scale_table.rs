@@ -18,6 +18,7 @@ pub fn ScaleTable() -> Element {
     rsx! {
         div { class: "scale-table",
             div { class: "scale-table-head",
+                span { class: "col-chevron" }
                 span { class: "col-name", "scale" }
                 span { class: "col-formula", "formula" }
                 span { class: "col-notes", "notes in {root}" }
@@ -34,6 +35,7 @@ pub fn ScaleTable() -> Element {
                                 button {
                                     class: "scale-row {open_class}",
                                     onclick: move |_| reference_state.write().toggle_expanded(scale_type),
+                                    span { class: "col-chevron", "\u{203a}" }
                                     span { class: "col-name", "{row.name}" }
                                     span { class: "col-formula mono", "{row.formula}" }
                                     span { class: "col-notes mono", "{row.notes}" }
