@@ -16,7 +16,7 @@ pub fn ScaleTable() -> Element {
 
     let state = reference_state.read();
     let rows = rows_for_family(state.family, state.root);
-    let expanded = state.expanded;
+    let selected = state.selected;
     let root = state.root;
     drop(state);
 
@@ -33,14 +33,14 @@ pub fn ScaleTable() -> Element {
                     .into_iter()
                     .map(|row| {
                         let scale_type = row.scale_type;
-                        let is_open = expanded == Some(scale_type);
+                        let is_open = selected == scale_type;
                         let open_class = if is_open { "open" } else { "" };
                         let note_count = row.notes.split(' ').count();
                         rsx! {
                             div { key: "{row.name}", class: "scale-row-group",
                                 button {
                                     class: "scale-row {open_class}",
-                                    onclick: move |_| reference_state.write().toggle_expanded(scale_type),
+                                    onclick: move |_| reference_state.write().select_scale(scale_type),
                                     span { class: "col-chevron", "\u{203a}" }
                                     span { class: "col-name", "{row.name}" }
                                     span { class: "col-formula mono", "{row.formula}" }

@@ -1300,3 +1300,30 @@ input[type="checkbox"]:checked::after {
     border-color: var(--border-control);
     color: var(--text-secondary);
 }
+
+/* Fretboard */
+.fretboard {
+    flex-shrink: 0;
+    padding: 4px 0 18px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.fretboard-caption {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.fretboard-title {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--accent-color);
+}
+
+.fretboard-svg {
+    display: block;
+    width: 100%;
+    max-height: 220px;
+}

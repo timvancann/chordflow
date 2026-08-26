@@ -2,13 +2,14 @@
 
 use chordflow_music_theory::{
     note::{Note, NoteLetter},
-    scale::{ScaleFamily, ScaleType},
+    scale::{Scale, ScaleFamily, ScaleType},
 };
 use dioxus::prelude::*;
+use strum::IntoEnumIterator;
 
 use crate::ui::reference::{
-    family_tabs::FamilyTabs, key_selector::KeySelector, legend::ReferenceLegend,
-    scale_table::ScaleTable,
+    family_tabs::FamilyTabs, fretboard::Fretboard, key_selector::KeySelector,
+    legend::ReferenceLegend, scale_table::ScaleTable,
 };
 
 /// What the reference screen is currently showing. Provided by context at the
@@ -20,8 +21,9 @@ use crate::ui::reference::{
 pub struct ReferenceState {
     pub root: Note,
     pub family: ScaleFamily,
-    /// The one scale whose chords are open, if any.
-    pub expanded: Option<ScaleType>,
+    /// The scale the fretboard is drawing, and whose chords are open. Always
+    /// set: a pinned fretboard needs something to show.
+    pub selected: ScaleType,
 }
 
 impl Default for ReferenceState {
@@ -30,7 +32,7 @@ impl Default for ReferenceState {
             // G, because that is the key the Scales poster is printed in.
             root: Note::new(NoteLetter::G, 0),
             family: ScaleFamily::Major,
-            expanded: None,
+            selected: ScaleType::Ionian,
         }
     }
 }
@@ -40,19 +42,23 @@ impl ReferenceState {
         self.root = root;
     }
 
-    /// Changing family closes any open row, since that row belongs to the
-    /// family you just left.
+    /// Changing family selects that family's first scale, since the previously
+    /// selected one belongs to the family you just left and the fretboard
+    /// always needs a scale to draw.
     pub fn select_family(&mut self, family: ScaleFamily) {
         self.family = family;
-        self.expanded = None;
+        self.selected = ScaleType::iter()
+            .find(|t| t.family() == family)
+            .expect("every family has at least one scale");
     }
 
-    pub fn toggle_expanded(&mut self, scale_type: ScaleType) {
-        self.expanded = if self.expanded == Some(scale_type) {
-            None
-        } else {
-            Some(scale_type)
-        };
+    pub fn select_scale(&mut self, scale_type: ScaleType) {
+        self.selected = scale_type;
+    }
+
+    /// The scale the fretboard should draw.
+    pub fn scale(&self) -> Scale {
+        Scale::new(self.root, self.selected)
     }
 }
 
@@ -64,6 +70,7 @@ pub fn ReferenceScreen() -> Element {
                 KeySelector {}
                 FamilyTabs {}
             }
+            Fretboard {}
             div { class: "reference-scroll",
                 ScaleTable {}
             }
@@ -77,36 +84,47 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_default_opens_on_g_major_with_nothing_expanded() {
+    fn test_default_opens_on_g_ionian() {
         let state = ReferenceState::default();
         assert_eq!(state.root, Note::new(NoteLetter::G, 0));
         assert_eq!(state.family, ScaleFamily::Major);
-        assert_eq!(state.expanded, None);
+        assert_eq!(state.selected, ScaleType::Ionian);
     }
 
     #[test]
-    fn test_toggle_expanded_opens_then_closes() {
+    fn test_changing_family_selects_that_familys_first_scale() {
         let mut state = ReferenceState::default();
-
-        state.toggle_expanded(ScaleType::Dorian);
-        assert_eq!(state.expanded, Some(ScaleType::Dorian));
-
-        state.toggle_expanded(ScaleType::Lydian);
-        assert_eq!(state.expanded, Some(ScaleType::Lydian));
-
-        state.toggle_expanded(ScaleType::Lydian);
-        assert_eq!(state.expanded, None);
-    }
-
-    #[test]
-    fn test_changing_family_closes_the_open_row() {
-        let mut state = ReferenceState::default();
-        state.toggle_expanded(ScaleType::Dorian);
 
         state.select_family(ScaleFamily::Other);
-
         assert_eq!(state.family, ScaleFamily::Other);
-        assert_eq!(state.expanded, None, "dorian is not in the Other family");
+        assert_eq!(
+            state.selected,
+            ScaleType::MajorBlues,
+            "the fretboard always needs a scale, and dorian is not in Other"
+        );
+
+        state.select_family(ScaleFamily::HarmonicMinor);
+        assert_eq!(state.selected, ScaleType::HarmonicMinor);
+    }
+
+    #[test]
+    fn test_every_family_can_be_selected_without_panicking() {
+        let mut state = ReferenceState::default();
+        for family in ScaleFamily::iter() {
+            state.select_family(family);
+            assert_eq!(state.selected.family(), family);
+        }
+    }
+
+    #[test]
+    fn test_scale_combines_the_selected_root_and_type() {
+        let mut state = ReferenceState::default();
+        state.select_root(Note::new(NoteLetter::E, -1));
+        state.select_scale(ScaleType::LydianDominant);
+
+        let scale = state.scale();
+        assert_eq!(scale.root, Note::new(NoteLetter::E, -1));
+        assert_eq!(scale.scale_type, ScaleType::LydianDominant);
     }
 
     #[test]
@@ -117,7 +135,7 @@ mod tests {
         let mut state = ReferenceState::default();
         state.select_root(Note::new(NoteLetter::E, -1));
         state.select_family(ScaleFamily::HarmonicMinor);
-        state.toggle_expanded(ScaleType::PhrygianDominant);
+        state.select_scale(ScaleType::PhrygianDominant);
 
         let seeded = state;
         let returned = seeded;
@@ -125,17 +143,17 @@ mod tests {
         assert_eq!(returned, state);
         assert_eq!(returned.root, Note::new(NoteLetter::E, -1));
         assert_eq!(returned.family, ScaleFamily::HarmonicMinor);
-        assert_eq!(returned.expanded, Some(ScaleType::PhrygianDominant));
+        assert_eq!(returned.selected, ScaleType::PhrygianDominant);
     }
 
     #[test]
     fn test_changing_key_leaves_the_open_row_alone() {
         let mut state = ReferenceState::default();
-        state.toggle_expanded(ScaleType::Dorian);
+        state.select_scale(ScaleType::Dorian);
 
         state.select_root(Note::new(NoteLetter::E, -1));
 
         assert_eq!(state.root, Note::new(NoteLetter::E, -1));
-        assert_eq!(state.expanded, Some(ScaleType::Dorian));
+        assert_eq!(state.selected, ScaleType::Dorian);
     }
 }

@@ -1,5 +1,6 @@
 pub mod accidental;
 pub mod chord;
+pub mod fretboard;
 pub mod interval;
 pub mod note;
 pub mod quality;
