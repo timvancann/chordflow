@@ -35,6 +35,13 @@ pub enum MetronomeEvent {
     CycleComplete,
 }
 
+/// Sent by the detached reference window as it is torn down, so the main
+/// window can dock the page again. Carries the state the panel was showing, so
+/// the key and family you were reading come back with it.
+pub enum ReferenceEvent {
+    Attached(crate::ui::reference::layout::ReferenceState),
+}
+
 pub const INITIAL_BPM: u16 = 100;
 
 pub static AUDIO_CMD: LazyLock<(Sender<AudioCommand>, Receiver<AudioCommand>)> =
@@ -43,6 +50,8 @@ pub static AUDIO_EVT: LazyLock<(Sender<AudioEvent>, Receiver<AudioEvent>)> =
     LazyLock::new(|| bounded(64));
 pub static METRONOME_EVT: LazyLock<(Sender<MetronomeEvent>, Receiver<MetronomeEvent>)> =
     LazyLock::new(|| bounded(64));
+pub static REFERENCE_EVT: LazyLock<(Sender<ReferenceEvent>, Receiver<ReferenceEvent>)> =
+    LazyLock::new(|| bounded(8));
 
 fn main() {
     // Set up logging to file so we can debug bundled app issues

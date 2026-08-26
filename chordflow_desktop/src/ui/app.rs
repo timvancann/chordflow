@@ -4,8 +4,8 @@ use chordflow_music_theory::chord::Chord;
 use dioxus::prelude::*;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
-const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
-const MAIN_CSS: Asset = asset!("/assets/main.css");
+pub const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
+pub const MAIN_CSS: Asset = asset!("/assets/main.css");
 
 use crate::{
     state::{
@@ -21,7 +21,7 @@ use crate::{
         top_zone::layout::TopZone,
         top_zone::subdivision_selector::Subdivision,
     },
-    AudioCommand, AudioEvent, AUDIO_CMD, AUDIO_EVT, INITIAL_BPM,
+    AudioCommand, AudioEvent, ReferenceEvent, AUDIO_CMD, AUDIO_EVT, INITIAL_BPM, REFERENCE_EVT,
 };
 
 pub struct MetronomeState {
@@ -70,6 +70,9 @@ impl MetronomeState {
 pub struct AppState {
     pub is_playing: bool,
     pub view: View,
+    /// True while the reference page lives in its own window. The page exists
+    /// in one place at a time, so the main window hides it while detached.
+    pub reference_detached: bool,
     pub selected_mode: ModeOption,
     pub fourths_config: FourthsConfig,
     pub diatonic_config: DiatonicConfig,
@@ -183,7 +186,8 @@ pub fn App() -> Element {
     use_context_provider(|| selected_mode);
     use_context_provider(|| app_state);
     use_context_provider(|| metronome_state);
-    use_context_provider(|| Signal::new(ReferenceState::default()));
+    let mut reference_state = use_signal(ReferenceState::default);
+    use_context_provider(|| reference_state);
     use_context_provider(|| Signal::new(SelectedChord::default()));
 
     use_future(move || async move {
@@ -229,6 +233,19 @@ pub fn App() -> Element {
                     }
                 }
             }
+            while let Ok(event) = REFERENCE_EVT.1.try_recv() {
+                match event {
+                    // The detached window went away. Dock the page again,
+                    // carrying back whatever it was showing.
+                    ReferenceEvent::Attached(state) => {
+                        *reference_state.write() = state;
+                        let mut app = app_state.write();
+                        app.reference_detached = false;
+                        app.view = View::Reference;
+                    }
+                }
+            }
+
             tokio::time::sleep(Duration::from_millis(5)).await;
         }
     });

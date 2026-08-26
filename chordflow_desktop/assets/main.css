@@ -1277,3 +1277,26 @@ input[type="checkbox"]:checked::after {
     font-size: 13px;
     color: var(--text-secondary);
 }
+
+/* Detached reference window */
+.panel-bar {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 64px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(10, 10, 10, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.settings-button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.settings-button:disabled:hover {
+    border-color: var(--border-control);
+    color: var(--text-secondary);
+}

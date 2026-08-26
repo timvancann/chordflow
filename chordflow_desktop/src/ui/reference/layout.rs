@@ -16,6 +16,7 @@ use crate::ui::reference::{
 /// practice screen and back does not reset the key you were reading in.
 ///
 /// In memory only, like every other setting in this app.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct ReferenceState {
     pub root: Note,
     pub family: ScaleFamily,
@@ -106,6 +107,25 @@ mod tests {
 
         assert_eq!(state.family, ScaleFamily::Other);
         assert_eq!(state.expanded, None, "dorian is not in the Other family");
+    }
+
+    #[test]
+    fn test_state_survives_a_detach_and_attach_round_trip() {
+        // The detached window is seeded by copying this value across a props
+        // boundary, and hands it back over a channel on the way out. Both legs
+        // are plain copies, so browsing in the panel comes back with it.
+        let mut state = ReferenceState::default();
+        state.select_root(Note::new(NoteLetter::E, -1));
+        state.select_family(ScaleFamily::HarmonicMinor);
+        state.toggle_expanded(ScaleType::PhrygianDominant);
+
+        let seeded = state;
+        let returned = seeded;
+
+        assert_eq!(returned, state);
+        assert_eq!(returned.root, Note::new(NoteLetter::E, -1));
+        assert_eq!(returned.family, ScaleFamily::HarmonicMinor);
+        assert_eq!(returned.expanded, Some(ScaleType::PhrygianDominant));
     }
 
     #[test]

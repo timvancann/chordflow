@@ -5,3 +5,4 @@ pub mod layout;
 pub mod legend;
 pub mod rows;
 pub mod scale_table;
+pub mod window;

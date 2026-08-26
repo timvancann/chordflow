@@ -3,14 +3,21 @@ use dioxus::prelude::*;
 use crate::{
     components::settings_panel::SettingsPanel,
     state::view::View,
-    ui::{app::AppState, menu_bar::mode_selector::ModeSelector},
+    ui::{
+        app::AppState,
+        menu_bar::mode_selector::ModeSelector,
+        reference::{layout::ReferenceState, window::detach_reference_window},
+    },
 };
 
 #[component]
 pub fn MenuBar() -> Element {
     let mut show_settings = use_signal(|| false);
     let mut app_state = use_context::<Signal<AppState>>();
+    let reference_state = use_context::<Signal<ReferenceState>>();
+
     let view = app_state.read().view;
+    let detached = app_state.read().reference_detached;
 
     rsx! {
         div { class: "menu-bar",
@@ -27,18 +34,42 @@ pub fn MenuBar() -> Element {
                 }
             }
             div { class: "menu-right",
+                // Detaching is only offered from the page itself, the way an
+                // editor lets you pull out the tab you are looking at.
+                if view == View::Reference {
+                    button {
+                        class: "settings-button",
+                        onclick: move |_| {
+                            detach_reference_window(*reference_state.peek());
+                            let mut app = app_state.write();
+                            app.reference_detached = true;
+                            app.view = View::Practice;
+                        },
+                        "Detach"
+                    }
+                }
                 button {
                     class: "settings-button",
+                    disabled: detached,
                     onclick: move |_| {
+                        if app_state.read().reference_detached {
+                            return;
+                        }
                         let next = match app_state.read().view {
                             View::Practice => View::Reference,
                             View::Reference => View::Practice,
                         };
                         app_state.write().view = next;
                     },
-                    match view {
-                        View::Practice => "Reference",
-                        View::Reference => "Back to practice",
+                    // While detached the page lives in the other window, so
+                    // there is nothing here to switch to.
+                    if detached {
+                        "Reference (detached)"
+                    } else {
+                        match view {
+                            View::Practice => "Reference",
+                            View::Reference => "Back to practice",
+                        }
                     }
                 }
                 button {
