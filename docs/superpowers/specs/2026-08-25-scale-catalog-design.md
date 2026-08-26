@@ -18,7 +18,13 @@ each with its own spec, plan and tests:
 1. **Scale catalog** (this document). Pure logic in `chordflow_music_theory`.
 2. **Reference view.** Full-screen browse surface: key selector, family
    tables, notes in key, chords in scale.
-3. **Follow mode.** Chord-follow wired to live practice state.
+3. ~~**Follow mode.** Chord-follow wired to live practice state.~~ **CUT
+   (2026-08-26).** The owner's call after project 2 shipped: the reference
+   screen with a key selector already answers "what fits this chord", and a
+   panel updating mid-drill would be more obtrusive than useful. Nothing was
+   orphaned by cutting it — `scales_containing`, built for this, ended up
+   powering `scale_degrees_of` and the chord popup instead. Do not rebuild
+   this without a fresh reason.
 4. **Detachable window.** The reference view as its own desktop window.
 5. **Fretboard diagram.** Root-relative degree-dot fretboard, as on the poster.
 
