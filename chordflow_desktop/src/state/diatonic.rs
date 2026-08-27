@@ -15,6 +15,9 @@ pub struct DiatonicConfig {
     pub scale: Scale,
     pub parent: ParentScale,
     pub is_random: bool,
+    /// Drill seventh chords instead of triads. A seventh contains its triad,
+    /// so this is strictly more information, not a different progression.
+    pub use_sevenths: bool,
     next_scale_interval: Interval,
     pub current_chord: Chord,
     pub next_chord: Chord,
@@ -23,6 +26,11 @@ pub struct DiatonicConfig {
 impl DiatonicConfig {
     pub fn set_root(&mut self, root: Note) {
         self.scale = Scale::new(root, self.parent.scale_type());
+        self.reset();
+    }
+
+    pub fn set_use_sevenths(&mut self, use_sevenths: bool) {
+        self.use_sevenths = use_sevenths;
         self.reset();
     }
 
@@ -68,9 +76,13 @@ impl DiatonicConfig {
             .iter()
             .position(|i| *i == interval)
             .expect("interval came from this scale");
-        self.scale
-            .diatonic_triads()
-            .expect("the diatonic practice mode always uses a seven-note scale")[degree]
+        let chords = if self.use_sevenths {
+            self.scale.diatonic_sevenths()
+        } else {
+            self.scale.diatonic_triads()
+        };
+
+        chords.expect("the diatonic practice mode always uses a seven-note scale")[degree]
     }
 }
 
@@ -82,6 +94,7 @@ impl Default for DiatonicConfig {
             scale,
             parent,
             is_random: false,
+            use_sevenths: false,
             next_scale_interval: Interval::Unison,
             current_chord: Chord::new(
                 Note::default(),
@@ -161,6 +174,48 @@ mod tests {
             walk(ParentScale::MelodicMinor, Note::new(NoteLetter::C, 0)).join(" "),
             "C- D- E\u{266d}+ F G Ao Bo"
         );
+    }
+
+    #[test]
+    fn test_sevenths_toggle_swaps_the_whole_progression() {
+        let mut config = DiatonicConfig::default();
+        config.set_root(Note::new(NoteLetter::C, 0));
+
+        let mut triads = vec![config.current_chord.to_string()];
+        for _ in 0..6 {
+            config.generate_next_chord();
+            triads.push(config.current_chord.to_string());
+        }
+        assert_eq!(triads.join(" "), "C D- E- F G A- Bo");
+
+        config.set_use_sevenths(true);
+        let mut sevenths = vec![config.current_chord.to_string()];
+        for _ in 0..6 {
+            config.generate_next_chord();
+            sevenths.push(config.current_chord.to_string());
+        }
+        assert_eq!(
+            sevenths.join(" "),
+            "C\u{394} D-7 E-7 F\u{394} G7 A-7 B\u{f8}"
+        );
+    }
+
+    #[test]
+    fn test_sevenths_work_for_every_parent() {
+        use strum::IntoEnumIterator;
+
+        for parent in ParentScale::iter() {
+            let mut config = DiatonicConfig {
+                parent,
+                use_sevenths: true,
+                ..Default::default()
+            };
+            config.set_root(Note::new(NoteLetter::C, 0));
+
+            for _ in 0..7 {
+                config.generate_next_chord();
+            }
+        }
     }
 
     #[test]

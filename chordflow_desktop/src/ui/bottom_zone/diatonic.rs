@@ -53,6 +53,17 @@ pub fn DiatonicSelector() -> Element {
                 }
             }
 
+            // Sevenths instead of triads
+            span { class: "label-small", "7ths" }
+            input {
+                r#type: "checkbox",
+                checked: config_state.read().diatonic_config.use_sevenths,
+                onchange: move |e| {
+                    let on = e.value().parse::<bool>().unwrap_or(false);
+                    config_state.write().diatonic_config.set_use_sevenths(on);
+                }
+            }
+
             // Random mode checkbox
             span { class: "label-small", "Random" }
             input {
