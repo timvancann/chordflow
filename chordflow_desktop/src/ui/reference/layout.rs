@@ -21,9 +21,13 @@ use crate::ui::reference::{
 pub struct ReferenceState {
     pub root: Note,
     pub family: ScaleFamily,
-    /// The scale the fretboard is drawing, and whose chords are open. Always
-    /// set: a pinned fretboard needs something to show.
+    /// The scale the fretboard is drawing. Always set — a pinned fretboard
+    /// needs something to show.
     pub selected: ScaleType,
+    /// The row whose chords are open, if any. Deliberately separate from
+    /// `selected`: sharing one field made the selected row permanently open,
+    /// so clicking it could never close it.
+    pub expanded: Option<ScaleType>,
 }
 
 impl Default for ReferenceState {
@@ -33,6 +37,7 @@ impl Default for ReferenceState {
             root: Note::new(NoteLetter::G, 0),
             family: ScaleFamily::Major,
             selected: ScaleType::Ionian,
+            expanded: None,
         }
     }
 }
@@ -50,10 +55,20 @@ impl ReferenceState {
         self.selected = ScaleType::iter()
             .find(|t| t.family() == family)
             .expect("every family has at least one scale");
+        self.expanded = None;
     }
 
+    /// Draw this scale on the fretboard, and toggle its chord row open.
+    ///
+    /// Clicking the already-open row closes the row but leaves the fretboard
+    /// showing it, which is why the two are tracked separately.
     pub fn select_scale(&mut self, scale_type: ScaleType) {
         self.selected = scale_type;
+        self.expanded = if self.expanded == Some(scale_type) {
+            None
+        } else {
+            Some(scale_type)
+        };
     }
 
     /// The scale the fretboard should draw.
@@ -71,9 +86,7 @@ pub fn ReferenceScreen() -> Element {
                 FamilyTabs {}
             }
             Fretboard {}
-            div { class: "reference-scroll",
-                ScaleTable {}
-            }
+            ScaleTable {}
             ReferenceLegend {}
         }
     }
@@ -114,6 +127,43 @@ mod tests {
             state.select_family(family);
             assert_eq!(state.selected.family(), family);
         }
+    }
+
+    #[test]
+    fn test_clicking_a_row_opens_it_and_clicking_again_closes_it() {
+        let mut state = ReferenceState::default();
+
+        state.select_scale(ScaleType::Dorian);
+        assert_eq!(state.selected, ScaleType::Dorian);
+        assert_eq!(state.expanded, Some(ScaleType::Dorian));
+
+        // Closing the row leaves the fretboard showing it — the two are
+        // separate concerns, and conflating them made rows uncloseable.
+        state.select_scale(ScaleType::Dorian);
+        assert_eq!(state.expanded, None);
+        assert_eq!(state.selected, ScaleType::Dorian);
+    }
+
+    #[test]
+    fn test_only_one_row_is_open_at_a_time() {
+        let mut state = ReferenceState::default();
+
+        state.select_scale(ScaleType::Dorian);
+        state.select_scale(ScaleType::Lydian);
+
+        assert_eq!(state.expanded, Some(ScaleType::Lydian));
+        assert_eq!(state.selected, ScaleType::Lydian);
+    }
+
+    #[test]
+    fn test_changing_family_closes_the_open_row() {
+        let mut state = ReferenceState::default();
+        state.select_scale(ScaleType::Dorian);
+
+        state.select_family(ScaleFamily::HarmonicMinor);
+
+        assert_eq!(state.expanded, None, "dorian is not in this family");
+        assert_eq!(state.selected, ScaleType::HarmonicMinor);
     }
 
     #[test]

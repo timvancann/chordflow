@@ -17,6 +17,7 @@ pub fn ScaleTable() -> Element {
     let state = reference_state.read();
     let rows = rows_for_family(state.family, state.root);
     let selected = state.selected;
+    let expanded = state.expanded;
     let root = state.root;
     drop(state);
 
@@ -33,8 +34,9 @@ pub fn ScaleTable() -> Element {
                     .into_iter()
                     .map(|row| {
                         let scale_type = row.scale_type;
-                        let is_open = selected == scale_type;
-                        let open_class = if is_open { "open" } else { "" };
+                        let is_open = expanded == Some(scale_type);
+                        let is_selected = selected == scale_type;
+                        let open_class = if is_selected { "open" } else { "" };
                         let note_count = row.notes.split(' ').count();
                         rsx! {
                             div { key: "{row.name}", class: "scale-row-group",
