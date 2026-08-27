@@ -2,6 +2,7 @@ use chordflow_music_theory::{
     chord::Chord,
     interval::Interval,
     note::Note,
+    quality::Notation,
     scale::{ParentScale, Scale},
 };
 use rand::{rng, seq::IndexedRandom};
@@ -64,8 +65,11 @@ impl DiatonicConfig {
         self.next_chord = self.chord_at(interval);
     }
 
-    pub fn get_chords(&self) -> (String, String) {
-        (self.current_chord.to_string(), self.next_chord.to_string())
+    pub fn get_chords(&self, notation: Notation) -> (String, String) {
+        (
+            self.current_chord.symbol(notation),
+            self.next_chord.symbol(notation),
+        )
     }
 
     /// The diatonic triad on the degree at `interval` within the current scale.
@@ -154,7 +158,7 @@ mod tests {
     fn test_walking_a_major_key_gives_its_diatonic_triads() {
         assert_eq!(
             walk(ParentScale::Major, Note::new(NoteLetter::C, 0)).join(" "),
-            "C D- E- F G A- Bo"
+            "C Dm Em F G Am B°"
         );
     }
 
@@ -164,7 +168,7 @@ mod tests {
         // diminished seventh, neither of which occur in a major key.
         assert_eq!(
             walk(ParentScale::HarmonicMinor, Note::new(NoteLetter::C, 0)).join(" "),
-            "C- Do E\u{266d}+ F- G A\u{266d} Bo"
+            "Cm D° E♭+ Fm G A♭ B°"
         );
     }
 
@@ -172,7 +176,7 @@ mod tests {
     fn test_walking_melodic_minor_gives_its_own_chords() {
         assert_eq!(
             walk(ParentScale::MelodicMinor, Note::new(NoteLetter::C, 0)).join(" "),
-            "C- D- E\u{266d}+ F G Ao Bo"
+            "Cm Dm E♭+ F G A° B°"
         );
     }
 
@@ -186,7 +190,7 @@ mod tests {
             config.generate_next_chord();
             triads.push(config.current_chord.to_string());
         }
-        assert_eq!(triads.join(" "), "C D- E- F G A- Bo");
+        assert_eq!(triads.join(" "), "C Dm Em F G Am B°");
 
         config.set_use_sevenths(true);
         let mut sevenths = vec![config.current_chord.to_string()];
@@ -194,10 +198,7 @@ mod tests {
             config.generate_next_chord();
             sevenths.push(config.current_chord.to_string());
         }
-        assert_eq!(
-            sevenths.join(" "),
-            "C\u{394} D-7 E-7 F\u{394} G7 A-7 B\u{f8}"
-        );
+        assert_eq!(sevenths.join(" "), "C△7 Dm7 Em7 F△7 G7 Am7 Bø7");
     }
 
     #[test]

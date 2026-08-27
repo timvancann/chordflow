@@ -2,6 +2,7 @@
 
 use chordflow_music_theory::{
     chord::Chord,
+    quality::Notation,
     roman::roman_numeral,
     scale::{scale_degrees_of, ScaleFamily},
 };
@@ -68,6 +69,8 @@ pub fn ChordPopup() -> Element {
     // Which families are expanded. Major starts open: it is the answer most
     // players want, and the others would open the popup dozens of rows tall.
     let mut open_families = use_signal(|| vec![ScaleFamily::Major]);
+    let notation = use_context::<Signal<Notation>>();
+    let notation = *notation.read();
 
     let Some(chord) = selected_chord.read().0 else {
         return rsx! {
@@ -95,7 +98,7 @@ pub fn ChordPopup() -> Element {
 
                 div { class: "settings-header",
                     div { class: "chord-heading",
-                        h2 { class: "chord-symbol mono", "{chord}" }
+                        h2 { class: "chord-symbol mono", "{chord.symbol(notation)}" }
                         span { class: "chord-quality", "{chord.quality.name().to_lowercase()}" }
                     }
                     button {
@@ -125,7 +128,7 @@ pub fn ChordPopup() -> Element {
                     div { class: "chord-degrees",
                         span { class: "reference-label", "appears as" }
                         p { class: "detail-note",
-                            "{chord} is a diatonic seventh in {total} of the catalog's scales. The modes of one parent scale share the same notes, so each parent contributes seven entries."
+                            "{chord.symbol(notation)} is a diatonic seventh in {total} of the catalog's scales. The modes of one parent scale share the same notes, so each parent contributes seven entries."
                         }
                         {
                             groups

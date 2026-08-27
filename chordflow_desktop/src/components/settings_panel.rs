@@ -1,4 +1,10 @@
+use chordflow_music_theory::{
+    chord::Chord,
+    note::{Note, NoteLetter},
+    quality::{Notation, Quality},
+};
 use dioxus::prelude::*;
+use strum::IntoEnumIterator;
 
 use crate::audio::settings::AUDIO_SETTINGS;
 
@@ -9,6 +15,7 @@ pub fn SettingsPanel(show: Signal<bool>) -> Element {
     let mut metronome_subdivision =
         use_signal(|| AUDIO_SETTINGS.get_metronome_subdivision_volume());
     let mut chord_volume = use_signal(|| AUDIO_SETTINGS.get_chord_volume());
+    let mut notation = use_context::<Signal<Notation>>();
 
     if !show() {
         return rsx! { div {} };
@@ -33,6 +40,40 @@ pub fn SettingsPanel(show: Signal<bool>) -> Element {
                 }
 
                 div { class: "settings-content",
+                    // Chord notation
+                    div { class: "settings-section",
+                        h3 { class: "section-title", "Chord symbols" }
+                        p { class: "detail-note",
+                            "How chord symbols are written, everywhere in the app."
+                        }
+                        div { class: "chip-row", style: "margin-top: 10px",
+                            {
+                                Notation::iter()
+                                    .map(|option| {
+                                        let active_class = if *notation.read() == option { "active" } else { "" };
+                                        // Show the notation's name beside a
+                                        // worked example, since the names alone
+                                        // do not tell you what you will get.
+                                        let c = Note::new(NoteLetter::C, 0);
+                                        let example = format!(
+                                            "{}  \u{2014}  C  {}  {}",
+                                            option.display_name(),
+                                            Chord::new(c, Quality::Minor).symbol(option),
+                                            Chord::new(c, Quality::MajorSeventh).symbol(option),
+                                        );
+                                        rsx! {
+                                            button {
+                                                key: "{option}",
+                                                class: "key-chip {active_class}",
+                                                onclick: move |_| notation.set(option),
+                                                "{example}"
+                                            }
+                                        }
+                                    })
+                            }
+                        }
+                    }
+
                     // Volume Controls Section
                     div { class: "settings-section",
                         h3 { class: "section-title", "Volume Controls" }

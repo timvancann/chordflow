@@ -1,7 +1,7 @@
 use chordflow_music_theory::{
     chord::Chord,
     note::{practical_keys, Note},
-    quality::Quality,
+    quality::{Notation, Quality},
 };
 use rand::{rng, seq::IndexedRandom};
 
@@ -66,8 +66,11 @@ impl RandomConfig {
         self.next_chord = draw(&self.roots, &self.qualities, Some(self.current_chord));
     }
 
-    pub fn get_chords(&self) -> (String, String) {
-        (self.current_chord.to_string(), self.next_chord.to_string())
+    pub fn get_chords(&self, notation: Notation) -> (String, String) {
+        (
+            self.current_chord.symbol(notation),
+            self.next_chord.symbol(notation),
+        )
     }
 }
 

@@ -2,7 +2,7 @@ use chordflow_music_theory::{
     chord::Chord,
     interval::Interval,
     note::{Note, NoteLetter},
-    quality::Quality,
+    quality::{Notation, Quality},
 };
 
 pub struct FourthsConfig {
@@ -36,8 +36,11 @@ impl FourthsConfig {
         self.next_chord = Chord::new(next_note, self.quality);
     }
 
-    pub fn get_chords(&self) -> (String, String) {
-        (self.current_chord.to_string(), self.next_chord.to_string())
+    pub fn get_chords(&self, notation: Notation) -> (String, String) {
+        (
+            self.current_chord.symbol(notation),
+            self.next_chord.symbol(notation),
+        )
     }
 }
 

@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use chordflow_music_theory::quality::Notation;
 use dioxus::prelude::*;
 
 use crate::ui::reference::{
@@ -13,6 +14,8 @@ use crate::ui::reference::{
 pub fn ScaleTable() -> Element {
     let mut reference_state = use_context::<Signal<ReferenceState>>();
     let mut selected_chord = use_context::<Signal<SelectedChord>>();
+    let notation = use_context::<Signal<Notation>>();
+    let notation = *notation.read();
 
     let state = reference_state.read();
     let rows = rows_for_family(state.family, state.root);
@@ -59,12 +62,15 @@ pub fn ScaleTable() -> Element {
                                                             sevenths
                                                                 .iter()
                                                                 .copied()
-                                                                .map(|chord| rsx! {
-                                                                    button {
-                                                                        key: "{chord}",
-                                                                        class: "chord-button mono",
-                                                                        onclick: move |_| selected_chord.write().select(chord),
-                                                                        "{chord}"
+                                                                .map(|chord| {
+                                                                    let symbol = chord.symbol(notation);
+                                                                    rsx! {
+                                                                        button {
+                                                                            key: "{symbol}",
+                                                                            class: "chord-button mono",
+                                                                            onclick: move |_| selected_chord.write().select(chord),
+                                                                            "{symbol}"
+                                                                        }
                                                                     }
                                                                 })
                                                         }

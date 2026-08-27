@@ -615,7 +615,7 @@ mod tests {
     #[test]
     fn test_triads_of_c_major() {
         let scale = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Ionian);
-        assert_eq!(chord_symbols(scale.diatonic_triads()), "C D- E- F G A- Bo");
+        assert_eq!(chord_symbols(scale.diatonic_triads()), "C Dm Em F G Am B°");
     }
 
     #[test]
@@ -623,7 +623,7 @@ mod tests {
         let scale = Scale::new(Note::new(NoteLetter::C, 0), ScaleType::Ionian);
         assert_eq!(
             chord_symbols(scale.diatonic_sevenths()),
-            "CΔ D-7 E-7 FΔ G7 A-7 Bø"
+            "C△7 Dm7 Em7 F△7 G7 Am7 Bø7"
         );
     }
 

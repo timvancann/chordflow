@@ -1,3 +1,4 @@
+use chordflow_music_theory::quality::Notation;
 use dioxus::prelude::*;
 
 use crate::{
@@ -15,6 +16,7 @@ pub fn MenuBar() -> Element {
     let mut show_settings = use_signal(|| false);
     let mut app_state = use_context::<Signal<AppState>>();
     let reference_state = use_context::<Signal<ReferenceState>>();
+    let notation = use_context::<Signal<Notation>>();
 
     let view = app_state.read().view;
     let detached = app_state.read().reference_detached;
@@ -40,7 +42,7 @@ pub fn MenuBar() -> Element {
                     button {
                         class: "settings-button",
                         onclick: move |_| {
-                            detach_reference_window(*reference_state.peek());
+                            detach_reference_window(*reference_state.peek(), *notation.peek());
                             let mut app = app_state.write();
                             app.reference_detached = true;
                             app.view = View::Practice;

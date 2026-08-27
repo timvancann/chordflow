@@ -1,6 +1,10 @@
 #![allow(non_snake_case)]
 
-use chordflow_music_theory::{note::practical_keys, quality::Quality};
+use chordflow_music_theory::{
+    chord::Chord,
+    note::{practical_keys, Note, NoteLetter},
+    quality::{Notation, Quality},
+};
 use dioxus::prelude::*;
 use strum::IntoEnumIterator;
 
@@ -17,6 +21,8 @@ use crate::ui::app::AppState;
 #[component]
 pub fn RandomSelector() -> Element {
     let mut app_state = use_context::<Signal<AppState>>();
+    let notation = use_context::<Signal<Notation>>();
+    let notation = *notation.read();
 
     rsx! {
         div { class: "random-selector",
@@ -55,7 +61,8 @@ pub fn RandomSelector() -> Element {
                                 let active_class = if selected { "active" } else { "" };
                                 // The symbol alone is cryptic and the full name
                                 // is long, so show a worked example: "C-7".
-                                let example = format!("C{quality}");
+                                let example =
+                                    Chord::new(Note::new(NoteLetter::C, 0), quality).symbol(notation);
                                 rsx! {
                                     button {
                                         key: "{quality:?}",

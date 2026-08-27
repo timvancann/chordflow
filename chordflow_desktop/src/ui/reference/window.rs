@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use chordflow_music_theory::quality::Notation;
 use dioxus::desktop::{
     tao::platform::macos::WindowBuilderExtMacOS, use_window, Config, LogicalSize, WindowBuilder,
 };
@@ -28,9 +29,13 @@ use crate::{
 /// window, and two metronome UIs driving one global audio engine would be a
 /// mess.
 #[component]
-pub fn ReferenceWindowRoot(seed: ReferenceState) -> Element {
+pub fn ReferenceWindowRoot(seed: ReferenceState, notation: Notation) -> Element {
     let reference_state = use_context_provider(|| Signal::new(seed));
     use_context_provider(|| Signal::new(SelectedChord::default()));
+    // Seeded, not shared: a separate VirtualDom cannot see the main window's
+    // context, so changing notation while detached will not reach this window
+    // until it is attached again.
+    use_context_provider(|| Signal::new(notation));
 
     let window = use_window();
 
@@ -67,7 +72,7 @@ pub fn ReferenceWindowRoot(seed: ReferenceState) -> Element {
 
 /// Open the reference page in its own window, seeded with what the main window
 /// was showing.
-pub fn detach_reference_window(seed: ReferenceState) {
+pub fn detach_reference_window(seed: ReferenceState, notation: Notation) {
     let mut builder = WindowBuilder::new()
         .with_title("ChordFlow Reference")
         .with_inner_size(LogicalSize {
@@ -80,6 +85,9 @@ pub fn detach_reference_window(seed: ReferenceState) {
         builder = builder.with_title_hidden(false);
     }
 
-    let dom = VirtualDom::new_with_props(ReferenceWindowRoot, ReferenceWindowRootProps { seed });
+    let dom = VirtualDom::new_with_props(
+        ReferenceWindowRoot,
+        ReferenceWindowRootProps { seed, notation },
+    );
     dioxus::desktop::window().new_window(dom, Config::new().with_window(builder));
 }

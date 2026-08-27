@@ -3,7 +3,7 @@
 use chordflow_music_theory::{
     chord::Chord,
     note::{Note, NoteLetter},
-    quality::Quality,
+    quality::{Notation, Quality},
 };
 use dioxus::prelude::*;
 use strum::IntoEnumIterator;
@@ -22,12 +22,12 @@ pub struct LegendEntry {
 ///
 /// Derived from `Quality::iter()` rather than written out, so a quality added
 /// to the theory crate shows up here without anyone remembering to.
-pub fn chord_legend() -> Vec<LegendEntry> {
+pub fn chord_legend(notation: Notation) -> Vec<LegendEntry> {
     let c = Note::new(NoteLetter::C, 0);
 
     Quality::iter()
         .map(|quality| LegendEntry {
-            example: Chord::new(c, quality).to_string(),
+            example: Chord::new(c, quality).symbol(notation),
             meaning: quality.name().to_lowercase(),
         })
         .collect()
@@ -53,13 +53,16 @@ pub fn degree_legend() -> Vec<LegendEntry> {
 
 #[component]
 pub fn ReferenceLegend() -> Element {
+    let notation = use_context::<Signal<Notation>>();
+    let notation = *notation.read();
+
     rsx! {
         div { class: "reference-legend",
             div { class: "legend-group",
                 span { class: "reference-label", "chords" }
                 div { class: "legend-entries",
                     {
-                        chord_legend()
+                        chord_legend(notation)
                             .into_iter()
                             .map(|entry| rsx! {
                                 span { key: "{entry.example}", class: "legend-entry",
@@ -95,12 +98,15 @@ mod tests {
 
     #[test]
     fn test_chord_legend_covers_every_quality() {
-        assert_eq!(chord_legend().len(), Quality::iter().count());
+        assert_eq!(
+            chord_legend(Notation::default()).len(),
+            Quality::iter().count()
+        );
     }
 
     #[test]
     fn test_chord_legend_explains_the_cryptic_symbols() {
-        let entries = chord_legend();
+        let entries = chord_legend(Notation::default());
         let find = |example: &str| {
             entries
                 .iter()
@@ -109,21 +115,24 @@ mod tests {
         };
 
         assert_eq!(find("C").meaning, "major");
-        assert_eq!(find("C-").meaning, "minor");
-        assert_eq!(find("Co").meaning, "diminished");
+        assert_eq!(find("Cm").meaning, "minor");
+        assert_eq!(find("C°").meaning, "diminished");
         assert_eq!(find("C+").meaning, "augmented");
         assert_eq!(find("C7").meaning, "dominant");
-        assert_eq!(find("C\u{394}").meaning, "major seventh");
-        assert_eq!(find("C-7").meaning, "minor seventh");
-        assert_eq!(find("C\u{f8}").meaning, "half diminished");
-        assert_eq!(find("Co7").meaning, "diminished seventh");
-        assert_eq!(find("C-\u{394}").meaning, "minor major seventh");
-        assert_eq!(find("C+\u{394}").meaning, "augmented major seventh");
+        assert_eq!(find("C△7").meaning, "major seventh");
+        assert_eq!(find("Cm7").meaning, "minor seventh");
+        assert_eq!(find("Cø7").meaning, "half diminished");
+        assert_eq!(find("C°7").meaning, "diminished seventh");
+        assert_eq!(find("Cm△7").meaning, "minor major seventh");
+        assert_eq!(find("C+△7").meaning, "augmented major seventh");
     }
 
     #[test]
     fn test_every_legend_entry_is_readable() {
-        for entry in chord_legend().into_iter().chain(degree_legend()) {
+        for entry in chord_legend(Notation::default())
+            .into_iter()
+            .chain(degree_legend())
+        {
             assert!(
                 !entry.example.is_empty(),
                 "an empty example would render as a blank cell"

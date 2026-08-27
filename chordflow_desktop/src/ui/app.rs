@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use chordflow_music_theory::chord::Chord;
+use chordflow_music_theory::{chord::Chord, quality::Notation};
 use dioxus::prelude::*;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
@@ -81,21 +81,21 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn get_chords(&self) -> (String, String) {
+    pub fn get_chords(&self, notation: Notation) -> (String, String) {
         match self.selected_mode {
             ModeOption::Fourths => {
-                let (current_chord, next_chord) = self.fourths_config.get_chords();
+                let (current_chord, next_chord) = self.fourths_config.get_chords(notation);
                 (current_chord, next_chord)
             }
             ModeOption::Diatonic => {
-                let (current_chord, next_chord) = self.diatonic_config.get_chords();
+                let (current_chord, next_chord) = self.diatonic_config.get_chords(notation);
                 (current_chord, next_chord)
             }
             ModeOption::Custom => {
                 let (current_chord, next_chord) = self.progression_config.get_chords();
                 (current_chord, next_chord)
             }
-            ModeOption::Random => self.random_config.get_chords(),
+            ModeOption::Random => self.random_config.get_chords(notation),
         }
     }
 
@@ -195,6 +195,7 @@ pub fn App() -> Element {
     let mut reference_state = use_signal(ReferenceState::default);
     use_context_provider(|| reference_state);
     use_context_provider(|| Signal::new(SelectedChord::default()));
+    use_context_provider(|| Signal::new(Notation::default()));
 
     use_future(move || async move {
         let _ = AUDIO_CMD.0.try_send(AudioCommand::SetChord(Some(

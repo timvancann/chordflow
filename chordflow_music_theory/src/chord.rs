@@ -1,6 +1,9 @@
 use std::fmt::{self, Display};
 
-use super::{note::Note, quality::Quality};
+use super::{
+    note::Note,
+    quality::{Notation, Quality},
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Chord {
@@ -8,15 +11,22 @@ pub struct Chord {
     pub quality: Quality,
 }
 
+/// Renders in the default notation. Anything the user sees should call
+/// `symbol` with their chosen notation instead.
 impl Display for Chord {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}{}", self.root, self.quality)
+        write!(f, "{}", self.symbol(Notation::default()))
     }
 }
 
 impl Chord {
     pub fn new(root: Note, quality: Quality) -> Chord {
         Chord { root, quality }
+    }
+
+    /// The chord written out, e.g. `Cm7` or `C△7` depending on `notation`.
+    pub fn symbol(self, notation: Notation) -> String {
+        format!("{}{}", self.root, self.quality.symbol(notation))
     }
 
     /// The chord's tones, spelled. A C augmented triad is `C E G♯`, not
@@ -73,6 +83,62 @@ mod tests {
             .map(|n| n.to_string())
             .collect::<Vec<String>>()
             .join(" ")
+    }
+
+    #[test]
+    fn test_every_quality_has_both_notations() {
+        use crate::quality::Notation;
+        use strum::IntoEnumIterator;
+
+        let c = Note::new(NoteLetter::C, 0);
+        let symbolic: Vec<String> = Quality::iter()
+            .map(|q| Chord::new(c, q).symbol(Notation::Symbolic))
+            .collect();
+        let common: Vec<String> = Quality::iter()
+            .map(|q| Chord::new(c, q).symbol(Notation::Common))
+            .collect();
+
+        assert_eq!(
+            symbolic,
+            vec![
+                "C",
+                "Cm",
+                "C\u{b0}",
+                "C+",
+                "C7",
+                "C\u{25b3}7",
+                "Cm7",
+                "C\u{f8}7",
+                "C\u{b0}7",
+                "Cm\u{25b3}7",
+                "C+\u{25b3}7",
+            ]
+        );
+        assert_eq!(
+            common,
+            vec![
+                "C",
+                "Cm",
+                "Cdim",
+                "Caug",
+                "C7",
+                "Cmaj7",
+                "Cm7",
+                "Cm7\u{266d}5",
+                "Cdim7",
+                "CmMaj7",
+                "Cmaj7\u{266f}5",
+            ]
+        );
+    }
+
+    #[test]
+    fn test_display_uses_the_default_notation() {
+        use crate::quality::Notation;
+
+        let chord = Chord::new(Note::new(NoteLetter::C, 0), Quality::MajorSeventh);
+        assert_eq!(chord.to_string(), chord.symbol(Notation::default()));
+        assert_eq!(chord.to_string(), "C\u{25b3}7");
     }
 
     #[test]

@@ -78,15 +78,7 @@ mod tests {
             .collect();
         assert_eq!(
             sevenths,
-            vec![
-                "G-7",
-                "A-7",
-                "B\u{266d}\u{394}",
-                "C7",
-                "D-7",
-                "E\u{f8}",
-                "F\u{394}"
-            ]
+            vec!["Gm7", "Am7", "B♭△7", "C7", "Dm7", "Eø7", "F△7"]
         );
     }
 

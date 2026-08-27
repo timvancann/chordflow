@@ -1,37 +1,99 @@
-use strum::{AsRefStr, Display, EnumCount, EnumIter, FromRepr};
+use std::fmt::Display;
+
+use strum::{AsRefStr, EnumCount, EnumIter, FromRepr};
 
 use super::interval::Interval;
 
-#[derive(
-    Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, EnumCount, FromRepr, Eq, Display,
-)]
+#[derive(Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, EnumCount, FromRepr, Eq)]
 pub enum Quality {
     #[default]
-    #[strum(to_string = "")]
     Major,
-    #[strum(to_string = "-")]
     Minor,
-    #[strum(to_string = "o")]
     Diminished,
-    #[strum(to_string = "+")]
     Augmented,
-    #[strum(to_string = "7")]
     Dominant,
-    #[strum(to_string = "Δ")]
     MajorSeventh,
-    #[strum(to_string = "-7")]
     MinorSeventh,
-    #[strum(to_string = "ø")]
     HalfDiminished,
-    #[strum(to_string = "o7")]
     DiminishedSeventh,
-    #[strum(to_string = "-Δ")]
     MinorMajorSeventh,
-    #[strum(to_string = "+Δ")]
     AugmentedMajorSeventh,
 }
 
+/// How chord symbols are written.
+///
+/// The same chord has several conventional spellings, and which one reads
+/// naturally depends on where you learned. This is a display concern only:
+/// nothing about a chord's identity changes with it.
+#[derive(Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, Eq)]
+pub enum Notation {
+    /// C, Cm, C°, C+, C7, C△7, Cm7, Cø7, C°7, Cm△7, C+△7
+    #[default]
+    Symbolic,
+    /// C, Cm, Cdim, Caug, C7, Cmaj7, Cm7, Cm7♭5, Cdim7, CmMaj7, Cmaj7♯5
+    Common,
+}
+
+impl Notation {
+    pub fn display_name(self) -> &'static str {
+        match self {
+            Notation::Symbolic => "symbolic",
+            Notation::Common => "common",
+        }
+    }
+}
+
+impl Display for Notation {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.display_name())
+    }
+}
+
+/// Renders as the default notation. Anything the user sees should call
+/// `symbol` with their chosen notation instead; this exists for logs, map
+/// keys and tests, where a stable canonical form is what you want.
+impl Display for Quality {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.symbol(Notation::default()))
+    }
+}
+
 impl Quality {
+    /// The suffix written after the root, e.g. the `m7` of `Cm7`.
+    ///
+    /// A major triad has no suffix in either notation, which is why callers
+    /// that show a bare symbol use a worked example on C instead.
+    pub fn symbol(self, notation: Notation) -> &'static str {
+        match notation {
+            Notation::Symbolic => match self {
+                Quality::Major => "",
+                Quality::Minor => "m",
+                Quality::Diminished => "\u{b0}",
+                Quality::Augmented => "+",
+                Quality::Dominant => "7",
+                Quality::MajorSeventh => "\u{25b3}7",
+                Quality::MinorSeventh => "m7",
+                Quality::HalfDiminished => "\u{f8}7",
+                Quality::DiminishedSeventh => "\u{b0}7",
+                Quality::MinorMajorSeventh => "m\u{25b3}7",
+                Quality::AugmentedMajorSeventh => "+\u{25b3}7",
+            },
+            Notation::Common => match self {
+                Quality::Major => "",
+                Quality::Minor => "m",
+                Quality::Diminished => "dim",
+                Quality::Augmented => "aug",
+                Quality::Dominant => "7",
+                Quality::MajorSeventh => "maj7",
+                Quality::MinorSeventh => "m7",
+                Quality::HalfDiminished => "m7\u{266d}5",
+                Quality::DiminishedSeventh => "dim7",
+                Quality::MinorMajorSeventh => "mMaj7",
+                Quality::AugmentedMajorSeventh => "maj7\u{266f}5",
+            },
+        }
+    }
+
     pub fn from_string(quality: &str) -> Quality {
         match quality {
             "" => Quality::Major,
