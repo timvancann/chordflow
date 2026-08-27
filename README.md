@@ -52,12 +52,15 @@ After that the app opens normally.
 
 ## 🚀 Usage
 
-Install [Dioxus CLI](https://dioxuslabs.com/learn/0.7/getting_started/)
+Install [Dioxus CLI](https://dioxuslabs.com/learn/0.7/getting_started/), then:
 
 ```bash
-cd chordflow_desktop
-dx serve
+just run
 ```
+
+Note that Deno also ships a binary called `dx`, which can shadow the Dioxus CLI
+on your PATH. The `just` recipes call `~/.cargo/bin/dx` explicitly to avoid that;
+set `DX=/path/to/dx` if yours lives somewhere else.
 
 ## 🏗️ Roadmap
 
