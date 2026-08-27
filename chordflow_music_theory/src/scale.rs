@@ -31,6 +31,47 @@ impl ScaleFamily {
     }
 }
 
+/// The three seven-note parent scales whose modes make up the catalog's
+/// families: every scale in the Major family is a mode of the major scale,
+/// every one in the Harmonic Minor family a mode of harmonic minor, and so on.
+///
+/// Practising "the chords of a key" means walking the degrees of one of these.
+/// A narrow enum rather than a bare `ScaleType` keeps the non-heptatonic
+/// scales out: `WholeTone` has no diatonic chords at all, so allowing it would
+/// make an unrepresentable state representable.
+#[derive(Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, Eq)]
+pub enum ParentScale {
+    #[default]
+    Major,
+    HarmonicMinor,
+    MelodicMinor,
+}
+
+impl Display for ParentScale {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.display_name())
+    }
+}
+
+impl ParentScale {
+    pub fn display_name(self) -> &'static str {
+        match self {
+            ParentScale::Major => "major",
+            ParentScale::HarmonicMinor => "harmonic minor",
+            ParentScale::MelodicMinor => "melodic minor",
+        }
+    }
+
+    /// The catalog scale this parent corresponds to.
+    pub fn scale_type(self) -> ScaleType {
+        match self {
+            ParentScale::Major => ScaleType::Ionian,
+            ParentScale::HarmonicMinor => ScaleType::HarmonicMinor,
+            ParentScale::MelodicMinor => ScaleType::MelodicMinor,
+        }
+    }
+}
+
 /// Every scale on the Scales.pdf poster, in the poster's order.
 #[derive(Default, Clone, Copy, Debug, EnumIter, AsRefStr, PartialEq, EnumCount, FromRepr, Eq)]
 pub enum ScaleType {
@@ -395,6 +436,33 @@ mod tests {
     }
 
     #[test]
+    fn test_every_parent_heads_a_family_of_seven_modes() {
+        for parent in ParentScale::iter() {
+            let scale_type = parent.scale_type();
+            let modes = ScaleType::iter()
+                .filter(|t| t.family() == scale_type.family())
+                .count();
+
+            assert_eq!(modes, 7, "{parent} should head seven modes");
+            assert_eq!(
+                scale_type.formula().len(),
+                7,
+                "{parent} must be heptatonic or it has no diatonic chords"
+            );
+        }
+    }
+
+    #[test]
+    fn test_parents_have_diatonic_chords() {
+        // DiatonicConfig indexes these directly, so `None` here would panic.
+        for parent in ParentScale::iter() {
+            let scale = Scale::new(Note::new(NoteLetter::C, 0), parent.scale_type());
+            assert!(scale.diatonic_triads().is_some(), "{parent}");
+            assert!(scale.diatonic_sevenths().is_some(), "{parent}");
+        }
+    }
+
+    #[test]
     fn test_formulas_match_the_poster() {
         for (scale_type, _, name, formula) in poster() {
             let actual: Vec<&str> = scale_type
@@ -630,7 +698,7 @@ mod tests {
     use crate::chord::Chord;
     use crate::quality::Quality;
 
-    use super::{scale_degrees_of, scales_containing};
+    use super::{scale_degrees_of, scales_containing, ParentScale};
 
     fn contains_scale(scales: &[Scale], root: (NoteLetter, i32), scale_type: ScaleType) -> bool {
         scales

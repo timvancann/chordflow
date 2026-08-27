@@ -1,14 +1,19 @@
 use chordflow_music_theory::{
     chord::Chord,
     interval::Interval,
-    note::{Note, NoteLetter},
-    quality::Quality,
-    scale::{Scale, ScaleType},
+    note::Note,
+    scale::{ParentScale, Scale},
 };
 use rand::{rng, seq::IndexedRandom};
 
+/// Walk the chords of a key, degree by degree.
+///
+/// The key can be major, harmonic minor or melodic minor — the three parents
+/// whose modes the catalog is built from — so this drills all seven modes of
+/// whichever one you pick.
 pub struct DiatonicConfig {
     pub scale: Scale,
+    pub parent: ParentScale,
     pub is_random: bool,
     next_scale_interval: Interval,
     pub current_chord: Chord,
@@ -17,25 +22,36 @@ pub struct DiatonicConfig {
 
 impl DiatonicConfig {
     pub fn set_root(&mut self, root: Note) {
-        self.scale = Scale::new(root, ScaleType::Ionian);
-        self.current_chord = Chord::new(self.scale.root, Quality::Major);
-        self.next_chord = self.preview_next_chord();
+        self.scale = Scale::new(root, self.parent.scale_type());
+        self.reset();
     }
 
-    fn preview_next_chord(&self) -> Chord {
-        let interval = next_diatonic_scale_interval(self.is_random, &self.scale, &Interval::Unison);
-        self.chord_at(interval)
+    pub fn set_parent(&mut self, parent: ParentScale) {
+        self.parent = parent;
+        self.scale = Scale::new(self.scale.root, parent.scale_type());
+        self.reset();
     }
 
     pub fn reset(&mut self) {
-        self.current_chord = Chord::new(self.scale.root, Quality::Major);
-        self.next_chord = self.preview_next_chord();
+        // Degree I, whatever it is: a major triad in a major key, but minor in
+        // both minor parents. Asking the scale rather than assuming is what
+        // makes harmonic and melodic minor correct.
+        self.current_chord = self.chord_at(Interval::Unison);
+        self.advance_to(Interval::Unison);
     }
 
     pub fn generate_next_chord(&mut self) {
         self.current_chord = self.next_chord;
-        let interval =
-            next_diatonic_scale_interval(self.is_random, &self.scale, &self.next_scale_interval);
+        self.advance_to(self.next_scale_interval);
+    }
+
+    /// Pick the chord that follows `from` and record which degree it sits on.
+    ///
+    /// Keeping `next_scale_interval` in step with `next_chord` is the whole
+    /// point: they used to drift after a reset, so the walk played degree two
+    /// twice before continuing.
+    fn advance_to(&mut self, from: Interval) {
+        let interval = next_diatonic_scale_interval(self.is_random, &self.scale, &from);
         self.next_scale_interval = interval;
         self.next_chord = self.chord_at(interval);
     }
@@ -60,14 +76,24 @@ impl DiatonicConfig {
 
 impl Default for DiatonicConfig {
     fn default() -> Self {
-        let scale = Scale::new(Note::default(), ScaleType::Ionian);
-        DiatonicConfig {
-            scale: Scale::new(Note::default(), ScaleType::Ionian),
+        let parent = ParentScale::default();
+        let scale = Scale::new(Note::default(), parent.scale_type());
+        let mut config = DiatonicConfig {
+            scale,
+            parent,
             is_random: false,
-            current_chord: Chord::new(scale.root, Quality::Major),
-            next_scale_interval: scale.intervals[0],
-            next_chord: Chord::new(Note::new(NoteLetter::D, 0), Quality::Minor),
-        }
+            next_scale_interval: Interval::Unison,
+            current_chord: Chord::new(
+                Note::default(),
+                chordflow_music_theory::quality::Quality::Major,
+            ),
+            next_chord: Chord::new(
+                Note::default(),
+                chordflow_music_theory::quality::Quality::Major,
+            ),
+        };
+        config.reset();
+        config
     }
 }
 
@@ -87,5 +113,96 @@ fn next_diatonic_scale_interval(
             .unwrap();
         let next_index = (index + 1) % scale.intervals.len();
         scale.intervals[next_index]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use chordflow_music_theory::{note::NoteLetter, quality::Quality};
+
+    use super::*;
+
+    fn walk(parent: ParentScale, root: Note) -> Vec<String> {
+        let mut config = DiatonicConfig {
+            parent,
+            ..Default::default()
+        };
+        config.set_root(root);
+
+        let mut chords = vec![config.current_chord.to_string()];
+        for _ in 0..6 {
+            config.generate_next_chord();
+            chords.push(config.current_chord.to_string());
+        }
+        chords
+    }
+
+    #[test]
+    fn test_walking_a_major_key_gives_its_diatonic_triads() {
+        assert_eq!(
+            walk(ParentScale::Major, Note::new(NoteLetter::C, 0)).join(" "),
+            "C D- E- F G A- Bo"
+        );
+    }
+
+    #[test]
+    fn test_walking_harmonic_minor_gives_its_own_chords() {
+        // The point of the feature: an augmented third degree and a
+        // diminished seventh, neither of which occur in a major key.
+        assert_eq!(
+            walk(ParentScale::HarmonicMinor, Note::new(NoteLetter::C, 0)).join(" "),
+            "C- Do E\u{266d}+ F- G A\u{266d} Bo"
+        );
+    }
+
+    #[test]
+    fn test_walking_melodic_minor_gives_its_own_chords() {
+        assert_eq!(
+            walk(ParentScale::MelodicMinor, Note::new(NoteLetter::C, 0)).join(" "),
+            "C- D- E\u{266d}+ F G Ao Bo"
+        );
+    }
+
+    #[test]
+    fn test_the_opening_chord_is_degree_one_of_the_chosen_parent() {
+        // It used to be hardcoded to a major triad, which is only correct for
+        // a major key.
+        let minor_parents = [ParentScale::HarmonicMinor, ParentScale::MelodicMinor];
+        for parent in minor_parents {
+            let mut config = DiatonicConfig::default();
+            config.set_parent(parent);
+            assert_eq!(
+                config.current_chord.quality,
+                Quality::Minor,
+                "{parent} starts on a minor triad"
+            );
+        }
+
+        let mut config = DiatonicConfig::default();
+        config.set_parent(ParentScale::Major);
+        assert_eq!(config.current_chord.quality, Quality::Major);
+    }
+
+    #[test]
+    fn test_switching_parent_keeps_the_root() {
+        let mut config = DiatonicConfig::default();
+        config.set_root(Note::new(NoteLetter::E, -1));
+        config.set_parent(ParentScale::HarmonicMinor);
+
+        assert_eq!(config.scale.root, Note::new(NoteLetter::E, -1));
+        assert_eq!(config.parent, ParentScale::HarmonicMinor);
+    }
+
+    #[test]
+    fn test_every_parent_walks_without_panicking_in_every_key() {
+        use chordflow_music_theory::note::practical_keys;
+        use strum::IntoEnumIterator;
+
+        for parent in ParentScale::iter() {
+            for root in practical_keys() {
+                let chords = walk(parent, root);
+                assert_eq!(chords.len(), 7, "{root} {parent}");
+            }
+        }
     }
 }
