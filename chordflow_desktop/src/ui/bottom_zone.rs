@@ -1,4 +1,3 @@
-mod controls;
 mod diatonic;
 mod fourths;
 pub mod layout;
