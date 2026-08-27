@@ -117,6 +117,11 @@ body {
 .bottom-zone {
     padding: 32px 0 40px;
     border-top: 1px solid var(--border-subtle);
+    /* A column so a wide mode panel can take a full row of its own beneath
+       the controls, rather than competing with the centred count-in. */
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
 }
 
 .zone-content {
@@ -1329,25 +1334,28 @@ input[type="checkbox"]:checked::after {
 }
 
 /* Random mode selectors */
+.zone-wide {
+    display: block;
+}
+
 .random-selector {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    align-items: flex-end;
+    gap: 8px;
+    width: 100%;
 }
 
 .random-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 90px 1fr;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
 }
 
 .chip-row {
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
-    justify-content: flex-end;
-    max-width: 620px;
 }
 
 .random-row .key-chip {

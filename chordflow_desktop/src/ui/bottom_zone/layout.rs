@@ -19,10 +19,13 @@ pub fn BottomZone() -> Element {
 
         div { class: "bottom-zone",
             div { class: "zone-content",
-                // Left: Play controls
+                // Play controls. Note the count-in inside this is absolutely
+                // positioned at the horizontal centre, so anything sharing this
+                // row must stay clear of the middle.
                 PlayControls {}
 
-                // Right: Mode-specific controls
+                // Right: mode-specific controls, for modes whose controls are
+                // narrow enough to sit beside the centred count-in.
                 match app_state.read().selected_mode {
                     ModeOption::Fourths => {
                         rsx! {div { class: "control-group-right", CircleOfFourthsQuality{} }}
@@ -34,8 +37,16 @@ pub fn BottomZone() -> Element {
                         rsx! { ProgressionSelector {} }
                     }
                     ModeOption::Random => {
-                        rsx! { RandomSelector {} }
+                        rsx! {}
                     }
+                }
+            }
+
+            // Random's two chip rows are far too wide to share a row with the
+            // centred count-in, so they get the full width underneath.
+            if app_state.read().selected_mode == ModeOption::Random {
+                div { class: "zone-content zone-wide",
+                    RandomSelector {}
                 }
             }
         }
