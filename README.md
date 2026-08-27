@@ -9,12 +9,23 @@ Grab the latest [release](https://github.com/timvancann/chordflow/releases)
 
 ![ChordFlow](docs/screenshot.png)
 
+The scales reference: 27 scales in any of the twelve keys, with the fretboard for
+whichever one you select. Roots are highlighted, and the thirds and fifths are
+marked so you can see the chord sitting inside the scale.
+
+![Scales reference](docs/reference-screen.png)
+![Diagrams](docs/diagrams.png)
+
 ## ✨ Features
 
 - 🎵 Metronome with Custom Sounds – Supports SoundFont-based metronome ticks.
 - 🔄 Random Chord Generation – Generate new chords every bar to improve improvisation skills.
 - 📊 Visual Progress Bar – Displays the current beat and bar progress.
 - 🎼 Real-Time Chord Display – Shows the current and upcoming chord.
+- 📖 Scales Reference – 27 scales across four families, spelled in any of the twelve keys, with the chords that fit each one.
+- 🎸 Fretboard Diagrams – Every scale drawn across the neck in standard tuning, degree-labelled, with the thirds and fifths marked.
+- 🔊 Playable Chords – Click any chord to hear it and see which scales it is a degree of.
+- 🪟 Detachable Reference – Pull the reference page into its own window and park it on a second screen while you practise.
 - ⚙️ Customizability – Users can supply their own SoundFont for metronome ticks and chord sounds.
 - 🎥 [Desktop GUI demo](https://www.youtube.com/watch?v=X5V7tlbOBbY)
 
