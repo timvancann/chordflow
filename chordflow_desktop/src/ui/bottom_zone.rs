@@ -4,3 +4,4 @@ mod fourths;
 pub mod layout;
 mod mode_selector;
 mod progression;
+mod random;

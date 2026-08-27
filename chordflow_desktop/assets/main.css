@@ -1327,3 +1327,31 @@ input[type="checkbox"]:checked::after {
     width: 100%;
     max-height: 220px;
 }
+
+/* Random mode selectors */
+.random-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.random-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: flex-end;
+    max-width: 620px;
+}
+
+.random-row .key-chip {
+    min-width: 34px;
+    padding: 3px 8px;
+    font-size: 12px;
+}

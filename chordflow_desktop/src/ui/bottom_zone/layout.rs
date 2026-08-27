@@ -8,7 +8,7 @@ use crate::{
         app::AppState,
         bottom_zone::{
             controls::PlayControls, diatonic::DiatonicSelector, fourths::CircleOfFourthsQuality,
-            progression::ProgressionSelector,
+            progression::ProgressionSelector, random::RandomSelector,
         },
     },
 };
@@ -33,9 +33,8 @@ pub fn BottomZone() -> Element {
                     ModeOption::Custom => {
                         rsx! { ProgressionSelector {} }
                     }
-
-                    _ => {
-                        rsx!{div { class: "control-group-right", }}
+                    ModeOption::Random => {
+                        rsx! { RandomSelector {} }
                     }
                 }
             }

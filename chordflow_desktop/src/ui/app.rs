@@ -10,7 +10,7 @@ pub const MAIN_CSS: Asset = asset!("/assets/main.css");
 use crate::{
     state::{
         diatonic::DiatonicConfig, fourths::FourthsConfig, modes::ModeOption,
-        progression::ProgressionConfig, view::View,
+        progression::ProgressionConfig, random::RandomConfig, view::View,
     },
     ui::{
         bottom_zone::layout::BottomZone,
@@ -77,6 +77,7 @@ pub struct AppState {
     pub fourths_config: FourthsConfig,
     pub diatonic_config: DiatonicConfig,
     pub progression_config: ProgressionConfig,
+    pub random_config: RandomConfig,
 }
 
 impl AppState {
@@ -94,7 +95,7 @@ impl AppState {
                 let (current_chord, next_chord) = self.progression_config.get_chords();
                 (current_chord, next_chord)
             }
-            _ => ("".to_string(), "".to_string()),
+            ModeOption::Random => self.random_config.get_chords(),
         }
     }
 
@@ -121,7 +122,10 @@ impl AppState {
                     .unwrap_or_default(),
             ),
 
-            _ => (vec![], vec![]),
+            ModeOption::Random => (
+                chord_to_midi(self.random_config.current_chord),
+                chord_to_midi(self.random_config.next_chord),
+            ),
         }
     }
 
@@ -139,8 +143,9 @@ impl AppState {
                 metronome_state.write().bars_per_chord =
                     self.progression_config.get_bars_per_cycle_current();
             }
-
-            _ => {}
+            ModeOption::Random => {
+                self.random_config.generate_next_chord();
+            }
         }
     }
 
@@ -158,8 +163,9 @@ impl AppState {
                 metronome_state.write().bars_per_chord =
                     self.progression_config.get_bars_per_cycle_current();
             }
-
-            _ => {}
+            ModeOption::Random => {
+                self.random_config.reset();
+            }
         }
         self.metronome_restart();
         // self.is_playing = false;
