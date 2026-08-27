@@ -18,26 +18,31 @@ pub fn BottomZone() -> Element {
     rsx! {
 
         div { class: "bottom-zone",
+            // Three slots: an empty spacer, the play controls, and the mode
+            // panel. The spacer is what keeps the controls visually centred
+            // while leaving them in the flex flow, so a wide panel pushes them
+            // aside instead of rendering underneath.
             div { class: "zone-content",
-                // Play controls. Note the count-in inside this is absolutely
-                // positioned at the horizontal centre, so anything sharing this
-                // row must stay clear of the middle.
+                div { class: "zone-slot" }
+
                 PlayControls {}
 
-                // Right: mode-specific controls, for modes whose controls are
-                // narrow enough to sit beside the centred count-in.
-                match app_state.read().selected_mode {
-                    ModeOption::Fourths => {
-                        rsx! {div { class: "control-group-right", CircleOfFourthsQuality{} }}
-                    }
-                    ModeOption::Diatonic => {
-                        rsx! { DiatonicSelector {} }
-                    }
-                    ModeOption::Custom => {
-                        rsx! { ProgressionSelector {} }
-                    }
-                    ModeOption::Random => {
-                        rsx! {}
+                div { class: "zone-slot zone-slot-right",
+                    match app_state.read().selected_mode {
+                        ModeOption::Fourths => {
+                            rsx! {div { class: "control-group-right", CircleOfFourthsQuality{} }}
+                        }
+                        ModeOption::Diatonic => {
+                            rsx! { DiatonicSelector {} }
+                        }
+                        ModeOption::Custom => {
+                            rsx! { ProgressionSelector {} }
+                        }
+                        // Random's chip rows are far too wide for a slot; they
+                        // take the full-width row below instead.
+                        ModeOption::Random => {
+                            rsx! {}
+                        }
                     }
                 }
             }

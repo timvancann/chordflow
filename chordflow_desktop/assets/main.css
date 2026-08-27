@@ -137,7 +137,24 @@ body {
 }
 
 .bottom-zone .zone-content {
-    justify-content: space-between;
+    gap: 24px;
+}
+
+/* Equal-weight slots either side of the play controls. Both start from a zero
+   basis so the controls sit dead centre when the panel is small, and the right
+   slot grows and wraps when it is not — rather than overlapping, which is what
+   happened while the controls were absolutely positioned. */
+.zone-slot {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+
+.zone-slot-right {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
 /* Center Stage */
@@ -298,9 +315,7 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    flex: 0 0 auto;
 }
 
 .label-small {
