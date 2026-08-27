@@ -14,12 +14,11 @@ whichever one you select. Roots are highlighted, and the thirds and fifths are
 marked so you can see the chord sitting inside the scale.
 
 ![Scales reference](docs/reference-screen.png)
-![Diagrams](docs/diagrams.png)
 
 ## ✨ Features
 
-- 🎵 Metronome with Custom Sounds – Supports SoundFont-based metronome ticks.
-- 🔄 Random Chord Generation – Generate new chords every bar to improve improvisation skills.
+- 🎵 SoundFont Audio – Woodblock metronome clicks and chord playback from a bundled SoundFont.
+- 🔄 Practice Modes – Cycle the circle of fourths, walk a diatonic progression, or drill your own.
 - 📊 Visual Progress Bar – Displays the current beat and bar progress.
 - 🎼 Real-Time Chord Display – Shows the current and upcoming chord.
 - 📖 Scales Reference – 27 scales across four families, spelled in any of the twelve keys, with the chords that fit each one.
@@ -53,9 +52,9 @@ After that the app opens normally.
 
 ## 🚀 Usage
 
-Install [Dioxus CLI](https://dioxuslabs.com/learn/0.6/getting_started/)
+Install [Dioxus CLI](https://dioxuslabs.com/learn/0.7/getting_started/)
 
-```dash
+```bash
 cd chordflow_desktop
 dx serve
 ```
