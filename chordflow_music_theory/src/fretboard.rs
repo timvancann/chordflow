@@ -28,7 +28,7 @@ pub struct FretPosition {
     pub string: usize,
     /// 0 is the open string.
     pub fret: usize,
-    /// Degree notation, e.g. "R" or "b3".
+    /// Degree notation, e.g. "R" or "♭3".
     pub degree: &'static str,
     /// True for thirds and fifths, however altered — the triad sitting inside
     /// the scale. Marked out on the poster, and the reason a shape is
@@ -145,12 +145,12 @@ mod tests {
         };
 
         assert_eq!(marked(ScaleType::Ionian), vec!["3", "5"]);
-        assert_eq!(marked(ScaleType::Locrian), vec!["b3", "b5"]);
+        assert_eq!(marked(ScaleType::Locrian), vec!["♭3", "♭5"]);
         // The awkward cases: a sharp fourth is not a fifth, a sharp second is
         // not a third, and a scale can have more than one of each.
-        assert_eq!(marked(ScaleType::WholeTone), vec!["3", "#5"]);
-        assert_eq!(marked(ScaleType::Augmented), vec!["3", "5", "#5"]);
-        assert_eq!(marked(ScaleType::MajorBlues), vec!["b3", "3", "5"]);
+        assert_eq!(marked(ScaleType::WholeTone), vec!["3", "♯5"]);
+        assert_eq!(marked(ScaleType::Augmented), vec!["3", "5", "♯5"]);
+        assert_eq!(marked(ScaleType::MajorBlues), vec!["♭3", "3", "5"]);
     }
 
     #[test]

@@ -67,7 +67,7 @@ mod tests {
         let row = build_row(ScaleType::Dorian, g());
 
         assert_eq!(row.name, "dorian");
-        assert_eq!(row.formula, "R 2 b3 4 5 6 b7");
+        assert_eq!(row.formula, "R 2 ♭3 4 5 6 ♭7");
         assert_eq!(row.notes, "G A B\u{266d} C D E F");
 
         let sevenths: Vec<String> = row

@@ -39,9 +39,9 @@ pub fn degree_legend() -> Vec<LegendEntry> {
     [
         ("R", "the root"),
         ("2", "a major second above it"),
-        ("b3", "flattened, a semitone down"),
-        ("#4", "sharpened, a semitone up"),
-        ("bb7", "flattened twice"),
+        ("♭3", "flattened, a semitone down"),
+        ("♯4", "sharpened, a semitone up"),
+        ("♭♭7", "flattened twice"),
     ]
     .into_iter()
     .map(|(example, meaning)| LegendEntry {

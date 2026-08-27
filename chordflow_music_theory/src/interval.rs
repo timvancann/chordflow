@@ -100,21 +100,21 @@ impl Interval {
     pub fn degree_label(self) -> &'static str {
         match self {
             Interval::Unison | Interval::Octave => "R",
-            Interval::MinorSecond => "b2",
+            Interval::MinorSecond => "♭2",
             Interval::MajorSecond => "2",
-            Interval::AugmentedSecond => "#2",
-            Interval::MinorThird => "b3",
+            Interval::AugmentedSecond => "♯2",
+            Interval::MinorThird => "♭3",
             Interval::MajorThird => "3",
-            Interval::DiminishedFourth => "b4",
+            Interval::DiminishedFourth => "♭4",
             Interval::PerfectFourth => "4",
-            Interval::AugmentedFourth | Interval::Tritone => "#4",
-            Interval::DiminishedFifth => "b5",
+            Interval::AugmentedFourth | Interval::Tritone => "♯4",
+            Interval::DiminishedFifth => "♭5",
             Interval::PerfectFifth => "5",
-            Interval::AugmentedFifth => "#5",
-            Interval::MinorSixth => "b6",
+            Interval::AugmentedFifth => "♯5",
+            Interval::MinorSixth => "♭6",
             Interval::MajorSixth => "6",
-            Interval::DiminishedSeventh => "bb7",
-            Interval::MinorSeventh => "b7",
+            Interval::DiminishedSeventh => "♭♭7",
+            Interval::MinorSeventh => "♭7",
             Interval::MajorSeventh => "7",
         }
     }
@@ -167,21 +167,21 @@ mod tests {
     fn test_degree_labels_match_the_poster() {
         let cases = [
             (Interval::Unison, "R"),
-            (Interval::MinorSecond, "b2"),
+            (Interval::MinorSecond, "♭2"),
             (Interval::MajorSecond, "2"),
-            (Interval::AugmentedSecond, "#2"),
-            (Interval::MinorThird, "b3"),
+            (Interval::AugmentedSecond, "♯2"),
+            (Interval::MinorThird, "♭3"),
             (Interval::MajorThird, "3"),
-            (Interval::DiminishedFourth, "b4"),
+            (Interval::DiminishedFourth, "♭4"),
             (Interval::PerfectFourth, "4"),
-            (Interval::AugmentedFourth, "#4"),
-            (Interval::DiminishedFifth, "b5"),
+            (Interval::AugmentedFourth, "♯4"),
+            (Interval::DiminishedFifth, "♭5"),
             (Interval::PerfectFifth, "5"),
-            (Interval::AugmentedFifth, "#5"),
-            (Interval::MinorSixth, "b6"),
+            (Interval::AugmentedFifth, "♯5"),
+            (Interval::MinorSixth, "♭6"),
             (Interval::MajorSixth, "6"),
-            (Interval::DiminishedSeventh, "bb7"),
-            (Interval::MinorSeventh, "b7"),
+            (Interval::DiminishedSeventh, "♭♭7"),
+            (Interval::MinorSeventh, "♭7"),
             (Interval::MajorSeventh, "7"),
         ];
         for (interval, label) in cases {
@@ -192,7 +192,7 @@ mod tests {
     #[test]
     fn test_display_delegates_to_degree_label() {
         assert_eq!(Interval::MajorThird.to_string(), "3");
-        assert_eq!(Interval::AugmentedFifth.to_string(), "#5");
-        assert_eq!(Interval::DiminishedSeventh.to_string(), "bb7");
+        assert_eq!(Interval::AugmentedFifth.to_string(), "♯5");
+        assert_eq!(Interval::DiminishedSeventh.to_string(), "♭♭7");
     }
 }
