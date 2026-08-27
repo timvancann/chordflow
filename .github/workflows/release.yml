@@ -32,7 +32,18 @@ jobs:
 
       - name: Fix executable permissions and re-sign app bundle
         run: |
-          APP_PATH=$(find target/dx -name "*.app" -path "*/bundle/macos/bundle/macos/*" | head -1)
+          # Match any .app under target/dx rather than a hardcoded nesting.
+          # The previous pattern pinned an exact "bundle/macos/bundle/macos"
+          # path that the Dioxus CLI no longer produces, so this silently
+          # resolved to an empty string and chmod failed with a confusing
+          # error two lines later. Fail loudly instead.
+          APP_PATH=$(find target/dx -type d -name "*.app" | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::No .app bundle found under target/dx"
+            echo "Directories present, for diagnosis:"
+            find target/dx -maxdepth 8 -type d | head -60
+            exit 1
+          fi
           echo "Processing app bundle: $APP_PATH"
 
           # Fix executable permissions (often lost during bundling)
@@ -57,7 +68,12 @@ jobs:
       - name: Find DMG file
         id: find_dmg
         run: |
-          DMG_PATH=$(find target/dx -name "*.dmg" | head -1)
+          DMG_PATH=$(find target/dx -type f -name "*.dmg" | head -1)
+          if [ -z "$DMG_PATH" ]; then
+            echo "::error::No .dmg found under target/dx"
+            find target/dx -maxdepth 8 -type f -name "*.dmg" -o -maxdepth 8 -type d | head -60
+            exit 1
+          fi
           DMG_NAME=$(basename "$DMG_PATH")
           echo "DMG_PATH=$DMG_PATH" >> $GITHUB_OUTPUT
           echo "DMG_NAME=$DMG_NAME" >> $GITHUB_OUTPUT

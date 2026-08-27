@@ -26,8 +26,6 @@ marked so you can see the chord sitting inside the scale.
 - 🎸 Fretboard Diagrams – Every scale drawn across the neck in standard tuning, degree-labelled, with the thirds and fifths marked.
 - 🔊 Playable Chords – Click any chord to hear it and see which scales it is a degree of.
 - 🪟 Detachable Reference – Pull the reference page into its own window and park it on a second screen while you practise.
-- ⚙️ Customizability – Users can supply their own SoundFont for metronome ticks and chord sounds.
-- 🎥 [Desktop GUI demo](https://www.youtube.com/watch?v=X5V7tlbOBbY)
 
 ## 📦 Installation
 
@@ -65,7 +63,7 @@ dx serve
 ## 🏗️ Roadmap
 
 - [ ] Fix Linux release
-- [ ] Add more scales (e.g. melodic minor)
+- [x] Add more scales (e.g. melodic minor)
 - [x] Better feedback and UI on custom progressions
 - [ ] Allow dynamically update the number of beats per bar
 - [x] Use [Dioxux](https://dioxuslabs.com/) to create a GUI native app
