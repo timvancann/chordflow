@@ -78,14 +78,33 @@ jobs:
           echo "DMG_PATH=$DMG_PATH" >> $GITHUB_OUTPUT
           echo "DMG_NAME=$DMG_NAME" >> $GITHUB_OUTPUT
 
-      - name: Generate release notes from conventional commits
-        id: changelog
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --latest --strip header
-        env:
-          OUTPUT: CHANGELOG.md
+      # git-cliff is run directly rather than through git-cliff-action, whose
+      # run.sh sizes its output with GNU `stat -c %s`. macOS stat wants -f %z,
+      # so the check errors, the `content` output is never set, and the step
+      # still reports success — an empty changelog with a green tick.
+      - name: Install git-cliff
+        run: brew install git-cliff
+
+      - name: Build release notes
+        run: |
+          {
+            git-cliff --config cliff.toml --latest --strip header
+            cat <<'NOTES'
+
+          ## Opening the app on macOS
+
+          This build is ad-hoc signed and not notarized by Apple, so the first launch is
+          blocked by Gatekeeper ("ChordFlow is damaged and can't be opened"). After
+          installing, remove the quarantine flag once:
+
+          ```
+          xattr -d com.apple.quarantine /Applications/ChordFlow.app
+          ```
+          NOTES
+          } > RELEASE_NOTES.md
+
+          echo "--- release notes ---"
+          cat RELEASE_NOTES.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -93,18 +112,7 @@ jobs:
           name: Release ${{ steps.get_version.outputs.VERSION }}
           draft: false
           prerelease: false
-          body: |
-            ${{ steps.changelog.outputs.content }}
-
-            ## Opening the app on macOS
-
-            This build is ad-hoc signed and not notarized by Apple, so the first launch is
-            blocked by Gatekeeper ("ChordFlow is damaged and can't be opened"). After
-            installing, remove the quarantine flag once:
-
-            ```
-            xattr -d com.apple.quarantine /Applications/ChordFlow.app
-            ```
+          body_path: RELEASE_NOTES.md
           files: |
             ${{ steps.find_dmg.outputs.DMG_PATH }}
         env:
