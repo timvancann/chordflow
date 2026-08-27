@@ -1,0 +1,46 @@
+# Release notes are generated from conventional commit subjects. Every commit
+# in this repo is a single conventional-commit line, which is what makes this
+# work without any hand-written changelog.
+
+[changelog]
+header = ""
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim | upper_first }}
+{% for commit in commits %}
+- {{ commit.message | upper_first }}{% endfor %}
+{% endfor %}
+"""
+trim = true
+footer = ""
+
+[git]
+conventional_commits = true
+# Anything that is not a conventional commit is dropped rather than dumped in
+# uncategorised.
+filter_unconventional = true
+split_commits = false
+protect_breaking_commits = false
+filter_commits = false
+tag_pattern = "v[0-9].*"
+sort_commits = "oldest"
+
+commit_parsers = [
+  # The release commit itself is noise in its own release notes.
+  { message = "^chore: release", skip = true },
+  { message = "^chore\\(release\\)", skip = true },
+
+  # The HTML comments are sort keys. git-cliff groups alphabetically
+  # otherwise, which would file Features below Documentation. `striptags` in
+  # the body template removes them before rendering.
+  { message = "^feat", group = "<!-- 0 -->Features" },
+  { message = "^fix", group = "<!-- 1 -->Bug Fixes" },
+  { message = "^perf", group = "<!-- 2 -->Performance" },
+  { message = "^refactor", group = "<!-- 3 -->Refactoring" },
+  { message = "^docs", group = "<!-- 4 -->Documentation" },
+  { message = "^test", group = "<!-- 5 -->Tests" },
+  { message = "^style", group = "<!-- 6 -->Styling" },
+  { message = "^ci", group = "<!-- 7 -->Build & CI" },
+  { message = "^build", group = "<!-- 7 -->Build & CI" },
+  { message = "^chore", group = "<!-- 8 -->Miscellaneous" },
+]

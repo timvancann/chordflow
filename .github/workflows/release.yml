@@ -17,6 +17,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # git-cliff reads the commit history to build the release notes.
+          fetch-depth: 0
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -59,6 +62,15 @@ jobs:
           echo "DMG_PATH=$DMG_PATH" >> $GITHUB_OUTPUT
           echo "DMG_NAME=$DMG_NAME" >> $GITHUB_OUTPUT
 
+      - name: Generate release notes from conventional commits
+        id: changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: CHANGELOG.md
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -66,6 +78,8 @@ jobs:
           draft: false
           prerelease: false
           body: |
+            ${{ steps.changelog.outputs.content }}
+
             ## Opening the app on macOS
 
             This build is ad-hoc signed and not notarized by Apple, so the first launch is
