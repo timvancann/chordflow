@@ -51,7 +51,7 @@ pub fn Fretboard() -> Element {
             svg {
                 class: "fretboard-svg",
                 view_box: "0 0 {width} {height}",
-                preserve_aspect_ratio: "xMinYMid meet",
+                preserve_aspect_ratio: "xMidYMid meet",
 
                 // Frets. The nut is thicker and lighter, the way it looks.
                 {

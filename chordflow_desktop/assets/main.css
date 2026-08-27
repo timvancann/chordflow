@@ -13,6 +13,16 @@
     --font-mono: "SF Mono", "Roboto Mono", monospace;
 }
 
+/* Dioxus mounts into <div id="main">, so the chain from the viewport down to
+   .app-container needs a definite height at every step. Without this, #main is
+   auto-height, .app-container's `height: 100%` resolves to auto, and any
+   scrollable descendant grows past the window instead of scrolling. */
+html,
+body,
+#main {
+    height: 100%;
+}
+
 body {
     margin: 0;
     padding: 0;
